@@ -132,10 +132,10 @@
   },
   "custom/clock": {
     "return-type": "json",
-    "exec": "~/.local/bin/waybar-calendar",
+    "exec": "waybar-calendar",
     "interval": 1,
-    "on-click": "~/.local/bin/waybar-calendar prev",
-    "on-click-right": "~/.local/bin/waybar-calendar next"
+    "on-click": "waybar-calendar prev",
+    "on-click-right": "waybar-calendar next"
   },
   "custom/weather": {
     "exec": "yweather -m",

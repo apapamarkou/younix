@@ -66,7 +66,7 @@ displayMenu() {
         height=$(($(tput lines) - 2))
         
         # List available timezones and let user select
-        timezone=$(printf "$EXIT_TEXT\n$(timedatectl list-timezones)" | fzf --layout=reverse --height=5 --prompt="  Select Timezone > ")
+        timezone=$(printf "$EXIT_TEXT\n$(timedatectl list-timezones)" | fzf --layout=reverse --height=$height --prompt="  Select Timezone > ")
         
         [ -z "$timezone" ] && exit 0
         
