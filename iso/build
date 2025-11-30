@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
+sudo umount -l work/x86_64/airootfs/proc
+sudo umount -l work/x86_64/airootfs/sys
+sudo umount -l work/x86_64/airootfs/dev
+sudo umount -l work/x86_64/airootfs/run
+
 echo "Cleaning previous build and pacman locks..."
 sudo rm -rf work/ out/
 sudo rm -f /var/lib/pacman/db.lck
