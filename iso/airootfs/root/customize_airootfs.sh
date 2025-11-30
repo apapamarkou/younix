@@ -18,7 +18,7 @@ chown -R user:user /home/user
 # Fix permissions for scripts inside skel-derived home
 chmod a+x /home/user/.config/autostart/* 2>/dev/null || true
 chmod a+x /home/user/.local/bin/* 2>/dev/null || true
-chmod a+x /usr/local/bin/starthypr
+chmod a+x /usr/local/bin/*
 
 sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
 sed -i 's/^#el_GR.UTF-8 UTF-8/el_GR.UTF-8 UTF-8/' /etc/locale.gen
