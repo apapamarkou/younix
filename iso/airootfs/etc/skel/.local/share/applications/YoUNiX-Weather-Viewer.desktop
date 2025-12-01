@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Weather
+Exec=yweather -t
+Type=Application
+MimeType=application/x-shellscript;text/plain;
+NoDisplay=false
+Icon=weather-clouds
+Comment=YoUNiX Weather Viewer
+Path=
+Terminal=false
+StartupNotify=false

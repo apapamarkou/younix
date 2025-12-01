@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Network Configuration
+Exec=netconf
+Type=Application
+MimeType=application/x-shellscript;text/plain;
+NoDisplay=false
+Icon=utilities-system-monitor
+Comment=YoUNiX Network Configuration
+Path=
+Terminal=false
+StartupNotify=false

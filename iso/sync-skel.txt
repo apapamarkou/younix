@@ -17,6 +17,20 @@
 # .local/bin
 .local/share/applications/img-view.desktop
 .local/share/applications/text-edit.desktop
+.local/share/applications/YoUNiX-Backup.desktop
+.local/share/applications/YoUNiX-Calendar.desktop
+.local/share/applications/YoUNiX-Control-Center.desktop
+.local/share/applications/YoUNiX-Files.desktop
+.local/share/applications/YoUNiX-Languages.desktop
+.local/share/applications/YoUNiX-Mount-Utility.desktop
+.local/share/applications/YoUNiX-Network-Configuration.desktop
+.local/share/applications/YoUNiX-Notes.desktop
+.local/share/applications/YoUNiX-Software-Center.desktop
+.local/share/applications/YoUNiX-Sound-Configuration.desktop
+.local/share/applications/YoUNiX-System-Monitor.desktop
+.local/share/applications/YoUNiX-System-Update.desktop
+.local/share/applications/YoUNiX-Time-Machine.desktop
+.local/share/applications/YoUNiX-Weather-Viewer.desktop
 .local/share/nwg-look
 .local/share/shell
 

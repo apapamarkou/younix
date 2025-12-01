@@ -727,54 +727,54 @@ class AppLauncher(QMainWindow):
         if os.path.isabs(icon_name) and os.path.exists(icon_name):
             return icon_name
 
-        lname = icon_name.lower()
-        found = []
-        icon_dirs = [
-            pathlib.Path("/usr/share/icons/hicolor"),
-            pathlib.Path("/usr/share/icons"),
-            pathlib.Path("/usr/local/share/icons"),
-            pathlib.Path.home() / ".local/share/icons",
-        ]
-        
-        for base in icon_dirs:
-            if not base.exists():
+        search_paths = ["/usr/share/icons", "/usr/share/pixmaps"]
+        theme_priority = {"breeze-dark": 4, "breeze": 3, "hicolor": 2}
+        icons = []
+
+        for base in search_paths:
+            if not os.path.isdir(base):
                 continue
             for root, dirs, files in os.walk(base):
                 for f in files:
-                    lf = f.lower()
-                    # Basename match (chromium → chromium.png / chromium.svg)
-                    if lf.startswith(lname) and lf.split(".")[0] == lname:
-                        found.append(pathlib.Path(root) / f)
-        
-        if not found:
+                    base_name, ext = os.path.splitext(f)
+                    if base_name != icon_name:
+                        continue
+                    if ext.lower() not in (".png", ".svg", ".svgz"):
+                        continue
+
+                    full_path = os.path.join(root, f)
+                    
+                    # Detect theme
+                    theme_score = 0
+                    for theme, prio in theme_priority.items():
+                        if f"/{theme}/" in full_path:
+                            theme_score = prio
+                            break
+                    
+                    # Extract size
+                    parts = full_path.split(os.sep)
+                    size = 0
+                    if "scalable" in parts:
+                        size = 9999
+                    else:
+                        for p in parts:
+                            if "x" in p:
+                                a = p.split("x")[0]
+                                if a.isdigit():
+                                    size = int(a)
+                                    break
+                            elif p.isdigit():
+                                size = int(p)
+                                break
+
+                    icons.append({"path": full_path, "size": size, "theme": theme_score})
+
+        if not icons:
             return None
 
-        # Filter out symbolic icons
-        found = [f for f in found if "-symbolic" not in f.stem.lower()]
-        if not found:
-            return None
-
-        # SVG always first
-        svg = [f for f in found if f.suffix.lower() == ".svg"]
-        if svg:
-            # Prefer dark theme if available
-            svg_dark = [f for f in svg if "dark" in str(f).lower()]
-            return str(svg_dark[0] if svg_dark else svg[0])
-
-        # PNG → pick largest
-        png = [f for f in found if f.suffix.lower() == ".png"]
-        if png:
-            def extract_size_from_path(path):
-                for part in path.parts:
-                    if "x" in part.lower():
-                        try:
-                            return int(part.lower().split("x")[0])
-                        except:
-                            continue
-                return 0
-            return str(max(png, key=extract_size_from_path))
-
-        return str(found[0])
+        # Sort by size desc, then theme priority desc
+        best = sorted(icons, key=lambda x: (x["size"], x["theme"]), reverse=True)[0]
+        return best["path"]
     
     def save_data(self, data=None):
         if data is None:

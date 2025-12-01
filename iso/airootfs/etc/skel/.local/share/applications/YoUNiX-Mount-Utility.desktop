@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Mount Utility
+Exec=ymount -t
+Type=Application
+MimeType=application/x-shellscript;text/plain;
+NoDisplay=false
+Icon=emblem-mounted
+Comment=YoUNiX Mount-Unmount Drives and Partitions
+Path=
+Terminal=false
+StartupNotify=false
