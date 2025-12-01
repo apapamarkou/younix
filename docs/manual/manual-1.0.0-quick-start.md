@@ -21,6 +21,7 @@
 ## 1. Applications
 
 ![YoUNiX Desktop](../images/1.1.applications.png)
+
 1. Type here to search into installed applications
 2. Application icons.
 	- Click an application to start.
@@ -29,6 +30,7 @@
 	- Drag an application icon on an other to make a new App Folder.
 
 ![YoUNiX Desktop](../images/1.1.1.application-folders.png)
+
 1. Search into the application folder
 2. Folder Applications
 	- Drag icons to reorder
@@ -38,10 +40,13 @@
 3. Default folder name is "App Folder". Use this button to change the folder name.
 
 ## 2. Virtual Desktops
+
 - There are seven (7) virtual desktops available.
 - Click on a number to jump into it.
 - Use the keyboard SUPER+number to change desktop.
+
 ## 3. Active Window/Task-name
+
 This is a text line informs you about the active window and the task is working on.
 
 ## 4. Weather monitor
@@ -51,11 +56,16 @@ You can read the manual here.
 ![YoUNiX Desktop](../images/1.4.weather.png)
 
 ## 5. Nightlight
+
 Nightlight is enabled by default from 20:00 to 08:00. Click on the icon to configure timing or disable it.
+
 ![YoUNiX Desktop](../images/1.5.nightlight.png)
 
 ## 6. Software Update Status
+
 Shows weather your system is updated or there are updates available.
 - Click on the icon to start the YoUNiX System Update.
+
 ![YoUNiX Desktop](../images/1.6.1.system-update.png)
+
 - Right Click on the icon to start YoUNiX Software Manager. 1.6.1.system-update.png 1.6.2.software-manager.png![YoUNiX Desktop](images/1.6.2.software-manager.png)
