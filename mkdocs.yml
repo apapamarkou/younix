@@ -3,7 +3,7 @@ site_url: https://apapamarkou.github.io/younix/
 
 # Theme Selection
 theme:
-    name: readthedocs # A clean, classic documentation theme
+    name: material # readthedocs A clean, classic documentation theme
     # or use: name: material # A modern, popular, feature-rich theme
 
 # Define the site navigation structure
