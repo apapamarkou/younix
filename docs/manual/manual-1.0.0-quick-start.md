@@ -68,4 +68,6 @@ Shows weather your system is updated or there are updates available.
 
 ![YoUNiX Desktop](../images/1.6.1.system-update.png)
 
-- Right Click on the icon to start YoUNiX Software Manager. 1.6.1.system-update.png 1.6.2.software-manager.png![YoUNiX Desktop](images/1.6.2.software-manager.png)
+- Right Click on the icon to start YoUNiX Software Manager.
+
+![YoUNiX Desktop](../images/1.6.2.software-manager.png)
