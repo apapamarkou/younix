@@ -1,5 +1,7 @@
 ![YoUNiX Splash](images/logo.jpg)
+---
 | [Manual](./manual/manual-0.0.0-contents.md) | Downloads | More Info
+---
 
 *The Unix that grew up with us.*
 
