@@ -56,5 +56,6 @@ Nightlight is enabled by default from 20:00 to 08:00. Click on the icon to confi
 
 ## 6. Software Update Status
 Shows weather your system is updated or there are updates available.
-- Click on the icon to start the YoUNiX System Update.![YoUNiX Desktop](../images/1.6.1.system-update.png)
+- Click on the icon to start the YoUNiX System Update.
+![YoUNiX Desktop](../images/1.6.1.system-update.png)
 - Right Click on the icon to start YoUNiX Software Manager. 1.6.1.system-update.png 1.6.2.software-manager.png![YoUNiX Desktop](images/1.6.2.software-manager.png)
