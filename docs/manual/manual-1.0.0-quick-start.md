@@ -23,17 +23,19 @@
 ![YoUNiX Desktop](../images/1.1.applications.png)
 1. Type here to search into installed applications
 2. Application icons.
-	1. Click an application to start.
-	2. Click in an empty area or use ESC to close the Applications
-	3. Drag icons to reorder and organize your applications as you like.
-	4. Drag an application icon on an other to make a new App Folder.![YoUNiX Desktop](../images/1.1.1.application-folders.png)
-		1. Search into the application folder
-		2. Folder Applications
-			1. Drag icons to reorder
-			2. Drag an icon on top to get it out of the folder
-			3. Click an icon to start the application.
-			4. Click in an empty area or use ESC key to close the folder.
-		3. Default folder name is "App Folder". Use this button to change the folder name.
+	- Click an application to start.
+	- Click in an empty area or use ESC to close the Applications
+	- Drag icons to reorder and organize your applications as you like.
+	- Drag an application icon on an other to make a new App Folder.
+![YoUNiX Desktop](../images/1.1.1.application-folders.png)
+1. Search into the application folder
+2. Folder Applications
+	- Drag icons to reorder
+	- Drag an icon on top to get it out of the folder
+	- Click an icon to start the application.
+	- Click in an empty area or use ESC key to close the folder.
+3. Default folder name is "App Folder". Use this button to change the folder name.
+
 ## 2. Virtual Desktops
 - There are seven (7) virtual desktops available.
 - Click on a number to jump into it.
