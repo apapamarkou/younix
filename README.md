@@ -1,5 +1,8 @@
 # 🧠 YOUNIX Desktop Environment
 
+| About | Documentation | Releases | News
+---
+
 **YOUNIX** is an Arch Based Distro — a complete, minimal yet powerful desktop environment for **everyday users, developers, musicians, media creators**, and **classic UNIX enthusiasts**.
 
 ⚠️ **Under Heavy Development**

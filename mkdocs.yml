@@ -1,0 +1,14 @@
+site_name: YoUNiX Operating System
+site_url: https://apapamarkou.github.io/younix/
+
+# Theme Selection
+theme:
+    name: readthedocs # A clean, classic documentation theme
+    # or use: name: material # A modern, popular, feature-rich theme
+
+# Define the site navigation structure
+nav:
+    - Home: 'index.md'
+    - Manual: 'manual/quick-start.md'
+    - Releases: 'releases/releases.md' 
+    # The string after the colon is the path *relative to the /docs folder*
