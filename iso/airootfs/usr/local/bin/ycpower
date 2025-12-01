@@ -43,8 +43,8 @@ display_menu() {
         case "$choice" in
             *Lock*) hyprlock ;;
             *Logout*) hyprctl dispatch exit ;;
-            *Reboot*) systemctl reboot ;;
-            *Poweroff*) systemctl poweroff ;;
+            *Reboot*) reboot ;;
+            *Poweroff*) shutdown -h now ;;
             *) exit 0 ;;
         esac
     done

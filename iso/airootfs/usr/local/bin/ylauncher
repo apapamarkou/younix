@@ -339,7 +339,7 @@ class AppLauncher(QMainWindow):
         header_layout = QHBoxLayout()
         header_layout.setContentsMargins(0, 0, 0, 0)
         
-        self.title_label = QLabel("Applications")
+        self.title_label = QLabel("YoUNiX Applications")
         self.title_label.setStyleSheet("color: white; font-size: 24px; font-weight: bold;")
         
         self.edit_button = QPushButton("Edit")
@@ -795,7 +795,7 @@ class AppLauncher(QMainWindow):
             # Sort items in folder by sortId
             self.filtered_items = sorted(folder_items, key=lambda x: x.get("sortId", 999999))
         else:
-            self.title_label.setText("Applications")
+            self.title_label.setText("YoUNiX - Applications")
             self.edit_button.hide()
             # Show apps not in folders and all folders
             items = []

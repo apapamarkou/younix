@@ -17,8 +17,6 @@
     "network",
     "battery",
     "pulseaudio",
-    "memory",
-    "cpu",
     "tray",
     "custom/clock",
     "custom/notification",
@@ -59,10 +57,10 @@
     }
   },
   "custom/modes": {
-        "exec": "cat /tmp/mode-msg",
-        "interval": 1,
-        "format": "{}",
-      	"return-type": "text"
+    "exec": "cat /tmp/mode-msg",
+    "interval": 1,
+    "format": "{}",
+    "return-type": "text"
   },
   "network": {
     "format-wifi": " 󰤨    {essid} ",
