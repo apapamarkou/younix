@@ -10,6 +10,7 @@
   ],
   "modules-center": [],
   "modules-right": [
+    "custom/modes",
     "custom/weather",
     "custom/nightlight",
     "custom/updates",
@@ -56,6 +57,12 @@
       "6": "6",
       "7": "7"
     }
+  },
+  "custom/modes": {
+        "exec": "cat /tmp/mode-msg",
+        "interval": 1,
+        "format": "{}",
+      	"return-type": "text"
   },
   "network": {
     "format-wifi": " 󰤨    {essid} ",

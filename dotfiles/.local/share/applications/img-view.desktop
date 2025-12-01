@@ -1,6 +1,0 @@
-[Desktop Entry]
-Name=ImgView
-Exec=img-view %f
-Type=Application
-MimeType=image/png;image/jpeg;image/jpg;image/gif;image/webp;image/bmp;image/tiff;
-NoDisplay=false

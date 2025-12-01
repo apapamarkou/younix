@@ -1,3 +1,0 @@
-#!/bin/bash
-
-cd "$MUSIC_FOLDER" && SONG=$(find . -type f -iname '*.mp3' | fzf --prompt=' > ' --height=90%) && [ -n "$SONG" ] && mpv "$SONG"

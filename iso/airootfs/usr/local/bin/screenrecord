@@ -1,4 +1,4 @@
-zx#!/usr/bin/env bash
+#!/usr/bin/env bash
 
 # __   __    _   _ _   _ ___  __
 # \ \ / /__ | | | | \ | (_) \/ /
@@ -22,6 +22,8 @@ MODE=$1
 # Default: region recording
 MODE=${MODE:-region}
 
+sleep 1.1
+
 case "$MODE" in
     fullscreen)
         wf-recorder -f "$FILE"
@@ -37,7 +39,6 @@ case "$MODE" in
 
     stop)
         pkill -SIGINT wf-recorder
-        notify-send "Screen recording stopped"
         exit 0
         ;;
 
@@ -47,4 +48,8 @@ case "$MODE" in
         ;;
 esac
 
-notify-send "Screen recording saved" "$FILE"
+notify-send -t 10000 -A "Play video" "Screen recording saved" "$FILE" | while read action; do
+    if [ "$action" = "0" ]; then
+        mpv "$FILE"
+    fi
+done &

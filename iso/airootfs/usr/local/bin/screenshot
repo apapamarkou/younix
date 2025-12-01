@@ -20,6 +20,8 @@ FILE="$DIR/screenshot_$(date +%Y-%m-%d_%H-%M-%S).png"
 # Default argument: region
 MODE=${1:-region}
 
+sleep 1.1
+
 case "$MODE" in
     fullscreen)
         grim "$FILE" && wl-copy < "$FILE"
@@ -40,5 +42,9 @@ case "$MODE" in
         ;;
 esac
 
-# Optional notification
-notify-send "Screenshot saved" "$FILE"
+# Notification with action to open with ksnip
+notify-send -t 10000 -A "Annotate" "Screenshot saved" "$FILE" | while read action; do
+    if [ "$action" = "0" ]; then
+        ksnip "$FILE"
+    fi
+done &
