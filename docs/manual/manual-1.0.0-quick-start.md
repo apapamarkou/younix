@@ -27,6 +27,7 @@
 	- Click in an empty area or use ESC to close the Applications
 	- Drag icons to reorder and organize your applications as you like.
 	- Drag an application icon on an other to make a new App Folder.
+
 ![YoUNiX Desktop](../images/1.1.1.application-folders.png)
 1. Search into the application folder
 2. Folder Applications
