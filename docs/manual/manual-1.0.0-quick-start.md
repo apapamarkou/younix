@@ -1,4 +1,4 @@
-# 1.0 The Desktop
+# The Desktop
 
 ![YoUNiX Desktop](../images/1.0.desktop.png)
 
