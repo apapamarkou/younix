@@ -223,5 +223,4 @@ xorg-xrandr
 xsettingsd
 zip
 zram-generator
-zsh
-archiso
+zsharchiso
