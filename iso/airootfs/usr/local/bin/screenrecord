@@ -48,8 +48,11 @@ case "$MODE" in
         ;;
 esac
 
-notify-send -t 10000 -A "Play video" "Screen recording saved" "$FILE" | while read action; do
-    if [ "$action" = "0" ]; then
-        mpv "$FILE"
-    fi
+ynotify "Video saved" \
+                "$FILE"  \
+                -t 10000 \
+                -l "$VIDEO_PLAYER '$FILE'" \
+                -p "Play video" \
+                -r "$VIDEO_EDITOR '$FILE'" \
+                -s "Edit video"
 done &

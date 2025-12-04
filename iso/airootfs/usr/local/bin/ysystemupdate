@@ -41,10 +41,10 @@ SNAP_UPDATES=0
 
 #Check is there are any repo updates and show the number of packages
 checkRepos() {
-    REPO_UPDATES=$(pacman -Qu | wc -l)
+    REPO_UPDATES=$(pacman -Sup --noconfirm 2>/dev/null | grep -c "\.pkg\.tar")
     # if count is 0 then yprint --green "No updates available in repos"
     if [ $REPO_UPDATES -eq 0 ]; then
-        echo "No updates available"
+        echo "No updates available $REPO_UPDATES"
     else
         echo "Update $REPO_UPDATES Arch Repositoriy packages"
     fi
@@ -113,7 +113,7 @@ displayMenu(){
         yprint --color=green "Checking Snap"
         snap_text=$(checkSnap)
         echo $snap_text
-        sleep 2
+        sleep 5
         
         # Build options array A-F
         OPTION_A="A) Update All"
@@ -182,11 +182,12 @@ if [ "$MONITOR_MODE" = true ]; then
     total_updates=$((REPO_UPDATES + AUR_UPDATES + FLATPAK_UPDATES + SNAP_UPDATES))
     
     if [ $total_updates -gt 0 ]; then
-        echo ""  # Updates available icon
+        echo " $total_updates"  # Updates available icon + number
         ynotify "System Updates Available" \
                 "Repository: $REPO_UPDATES\nAUR: $AUR_UPDATES\nFlatpak: $FLATPAK_UPDATES\nSnap: $SNAP_UPDATES\n\nUse the   icon in top bar.\nLeft Click to open $DISTRO_NAME update\nRight click to open $DISTRO_NAME Software\n"  \
                 -t 12000 \
-                -l "$SCRIPT_NAME -t"
+                -l "$SCRIPT_NAME -t" \
+                -p "Open Updater"
     else
         echo ""  # No updates, empty output
     fi

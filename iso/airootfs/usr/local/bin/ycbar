@@ -19,7 +19,7 @@ showHelp() {
 
 openTerminal() {
     echo "opening terminal"
-    nohup flock -n ~/.config/ylock/$SCRIPT_NAME.lock terminal --columns=50 --lines=20 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME $args > /dev/null 2>&1 &
+    nohup flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=50 --lines=20 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME $args > /dev/null 2>&1 &
 }
 
 printMessage() {
@@ -39,7 +39,7 @@ get_all_modules() {
     # All real modules = top-level keys whose value is an object
     # Exclude structural keys (modules-left/center/right, layer, position, etc.)
     jq -r 'to_entries[] | select(.value | type == "object") | .key' "$CONFIG_FILE" |
-    grep -v -E '^(modules-left|modules-center|modules-right|layer|position|height|spacing|custom/launcher|hyprland/workspaces)$'
+    grep -v -E '^(modules-left|modules-center|modules-right|layer|position|height|spacing|custom/launcher|custom/modes|hyprland/workspaces)$'
 }
 
 is_enabled() {
@@ -187,7 +187,6 @@ done
 
 if [ "$OPEN_TERMINAL" = true ]; then
     openTerminal
-    echo "terminal executed"
     exit 0
 fi
 

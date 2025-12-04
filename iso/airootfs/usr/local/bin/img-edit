@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -a) APP="ksnip"; shift ;;
+        -s) APP="naps2"; shift ;;
+        -e) APP="gimp"; shift ;;
+        -h) 
+            echo "Usage: img-edit [-a|-s|-e] <image>"; 
+            echo "  -a  Open with ksnip"; 
+            echo "  -s  Open with naps2"; 
+            echo "  -e  Open with gimp (default)"; 
+            echo "  -h  Show this help message";
+            echo "  <image>  Image to open";
+            exit 0 ;;
+        *) IMG="$1"; shift ;;
+    esac
+done
+
+# Default to gimp if no app specified
+APP=${APP:-gimp}
+
+# Move every feh to the bottom layer
+hyprctl -j clients \
+  | jq -r '.[] | select(.class=="feh") | .address' \
+  | xargs -r -I{} hyprctl dispatch movetolayer {} 1
+
+# Open with selected editor
+$APP "$IMG" &
+
+echo "Opening $IMG in $APP..."

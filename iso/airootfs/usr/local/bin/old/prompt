@@ -1,0 +1,189 @@
+
+### **Main Menu (Reversed fzf)**
+
+```
+YoUNiX Calculator
+-----------------
+↓ Select mode (use arrow keys)
+
+[ Basic Calculator ]        ← Preview: Perform + - * / % calculations. Use 'ans' for last result.
+[ Scientific Calculator ]   ← Preview: sin, cos, tan, log, sqrt. Use 'ans' for last result.
+[ Unit Converter ]          ← Preview: Convert between units and currencies. Opens sub-menu.
+[ Quiz / Fun Mode ]         ← Preview: Solve random math problems and track your score.
+[ Exit ]                     ← Preview: Quit the calculator.
+```
+
+* The **selected item is highlighted**, like a reversed fzf list.
+* On the right or below, a **mini manual** for the currently highlighted selection appears.
+
+---
+
+### **Unit Converter Sub-Menu**
+
+```
+Unit Converter
+--------------
+↓ Select conversion type:
+
+[ Length / Distance ]       ← Preview: Convert km, m, cm, mm, miles, yards.
+[ Weight / Mass ]           ← Preview: Convert kg, g, lb, oz.
+[ Temperature ]             ← Preview: Convert °C, °F, K.
+[ Currency ]                ← Preview: Convert between USD, EUR, GBP, etc.
+[ Back ]                    ← Preview: Return to main menu.
+```
+
+* Again, reversed fzf style, with **preview text** for the selected conversion type.
+* Selecting one opens a **prompt for actual conversion**, e.g., `Enter value: 10 km → m`.
+
+---
+
+### **Basic Calculator UI**
+
+```
+Basic Calculator
+----------------
+Last result: 16
+
+Enter expression (or 'q' to go back): ans * 2
+Result: 32
+
+Enter expression (or 'q' to go back):
+```
+
+* Supports `ans` for last calculation.
+* Keeps history in memory while the session is active.
+
+---
+
+### **Scientific Calculator UI**
+
+```
+Scientific Calculator
+--------------------
+Last result: 32
+
+Enter expression (or 'q' to go back): sqrt(ans) + sin(0)
+Result: 5.656854
+
+Enter expression (or 'q' to go back):
+```
+
+* Could highlight **unsupported functions** in preview if the user types a wrong function.
+
+---
+
+### **Mini Features for Fun / Quiz Mode**
+
+```
+Math Quiz Mode
+--------------
+Score: 3
+
+Problem: 8 * 7 = ?
+Your answer: 56
+Correct! Score: 4
+
+Next problem: 15 / 3 = ?
+```
+
+* Keeps track of score.
+* Could optionally show **hints in preview**.
+
+---
+
+If you want, I can **draft an actual YoUNiX shell script skeleton** using `fzf --reverse --preview` that implements **main menu + unit converter sub-menu + mini manuals**, so you can just fill in the calculation logic.
+
+Do you want me to do that next?
+Perfect, now we’re talking—this can be really slick in a terminal. Here’s a conceptual mockup for your YoUNiX calculator UI using an **fzf-style menu with previews**. I’ll describe it step by step so you can visualize it:
+
+---
+
+### **Main Menu (Reversed fzf)**
+
+```
+YoUNiX Calculator
+-----------------
+↓ Select mode (use arrow keys)
+
+[ Basic Calculator ]        ← Preview: Perform + - * / % calculations. Use 'ans' for last result.
+[ Scientific Calculator ]   ← Preview: sin, cos, tan, log, sqrt. Use 'ans' for last result.
+[ Unit Converter ]          ← Preview: Convert between units and currencies. Opens sub-menu.
+[ Quiz / Fun Mode ]         ← Preview: Solve random math problems and track your score.
+[ Exit ]                     ← Preview: Quit the calculator.
+```
+
+* The **selected item is highlighted**, like a reversed fzf list.
+* On the right or below, a **mini manual** for the currently highlighted selection appears.
+
+---
+
+### **Unit Converter Sub-Menu**
+
+```
+Unit Converter
+--------------
+↓ Select conversion type:
+
+[ Length / Distance ]       ← Preview: Convert km, m, cm, mm, miles, yards.
+[ Weight / Mass ]           ← Preview: Convert kg, g, lb, oz.
+[ Temperature ]             ← Preview: Convert °C, °F, K.
+[ Currency ]                ← Preview: Convert between USD, EUR, GBP, etc.
+[ Back ]                    ← Preview: Return to main menu.
+```
+
+* Again, reversed fzf style, with **preview text** for the selected conversion type.
+* Selecting one opens a **prompt for actual conversion**, e.g., `Enter value: 10 km → m`.
+
+---
+
+### **Basic Calculator UI**
+
+```
+Basic Calculator
+----------------
+Last result: 16
+
+Enter expression (or 'q' to go back): ans * 2
+Result: 32
+
+Enter expression (or 'q' to go back):
+```
+
+* Supports `ans` for last calculation.
+* Keeps history in memory while the session is active.
+
+---
+
+### **Scientific Calculator UI**
+
+```
+Scientific Calculator
+--------------------
+Last result: 32
+
+Enter expression (or 'q' to go back): sqrt(ans) + sin(0)
+Result: 5.656854
+
+Enter expression (or 'q' to go back):
+```
+
+* Could highlight **unsupported functions** in preview if the user types a wrong function.
+
+---
+
+### **Mini Features for Fun / Quiz Mode**
+
+```
+Math Quiz Mode
+--------------
+Score: 3
+
+Problem: 8 * 7 = ?
+Your answer: 56
+Correct! Score: 4
+
+Next problem: 15 / 3 = ?
+```
+
+* Keeps track of score.
+* Could optionally show **hints in preview**.

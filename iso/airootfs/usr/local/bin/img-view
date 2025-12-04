@@ -16,4 +16,18 @@
 # If no argument is provided, it defaults to 0 (the first image in the directory).
 
 SCRIPT_NAME=$(basename "$0")
-flock -n $LOCK_DIR/$SCRIPT_NAME.lock feh --image-bg black --geometry 1900x1000 --scale-down --start-at $1
+INFO_FILE=$(mktemp)
+echo "Enter: edit with \$EDITOR | 1: annotator | 2: PDF" > "$INFO_FILE"
+flock -n $LOCK_DIR/$SCRIPT_NAME.lock \
+    feh --info "echo '[ENTER] to edit [1] to annotate [2] to convert to pdf'" \
+        --font "yudit/24" \
+        --action "img-edit -e %F" \
+        --action1 "img-edit -a %F" \
+        --action2 "img-edit -s %F" \
+        --image-bg black \
+        --geometry 1900x1000 \
+        --scale-down \
+        --start-at $1
+
+rm "$INFO_FILE"
+

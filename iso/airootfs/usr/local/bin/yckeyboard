@@ -1,0 +1,181 @@
+#!/bin/bash
+
+# __   __    _   _ _   _ ___  __
+# \ \ / /__ | | | | \ | (_) \/ /
+#  \ V / _ \| | | |  \| | |\  / 
+#   | | (_) | |_| | |\  | |/  \ 
+#   |_|\___/ \___/|_| \_|_/_/\_\
+#
+# License GPL3
+# Homepage: https://github.com/apapamarkou/younix
+# Author: Andrianos Papamarkou
+# Email: papamarkoua@gmail.com
+
+#
+# YoUNiX Keyboard Layouts
+#
+
+# Standard YoUNiX Control script template
+MUTE_NOTIFY=false
+MUTE_ECHO=false
+SCRIPT_NAME=$(basename "$0")
+TITLE="Keyboard Layouts"
+CONFIG_FILE="$HOME/.config/hypr/input.conf"
+
+showHelp() {
+    echo "$DISTRO_NAME $TITLE"
+    echo "Usage: $SCRIPT_NAME [OPTIONS]"
+    echo "Options:"
+    echo "  -t    Open in terminal"
+    echo "  -h    Show this help"
+    echo "Arguments can be combined: -vn, -nv, etc."
+    exit 0
+}
+
+openTerminal() {
+    nohup flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=50 --lines=15 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME $args > /dev/null 2>&1 &
+}
+
+printMessage() {
+    if [ "$MUTE_NOTIFY" = false ]; then
+        notify-send "$@"
+    fi
+    if [ "$MUTE_ECHO" = false ]; then
+        echo -e "$@"
+    fi
+}
+
+get_current_layouts() {
+    if [ -f "$CONFIG_FILE" ]; then
+        grep "kb_layout" "$CONFIG_FILE" | sed 's/.*kb_layout = //' | tr ',' ' '
+    fi
+}
+
+is_layout_enabled() {
+    local layout="$1"
+    local current_layouts=$(get_current_layouts)
+    [[ " $current_layouts " =~ " $layout " ]]
+}
+
+toggle_layout() {
+    local layout="$1"
+    local current_layouts=$(get_current_layouts)
+    
+    if is_layout_enabled "$layout"; then
+        # Remove layout
+        new_layouts=$(echo "$current_layouts" | sed "s/\b$layout\b//g" | tr -s ' ' | sed 's/^ *//;s/ *$//' | tr ' ' ',')
+        [ -z "$new_layouts" ] && new_layouts="us"  # Always keep at least us
+    else
+        # Add layout
+        if [ -z "$current_layouts" ]; then
+            new_layouts="$layout"
+        else
+            new_layouts="$current_layouts,$layout"
+        fi
+        new_layouts=$(echo "$new_layouts" | tr ' ' ',')
+    fi
+    
+    # Update config file
+    sed -i "s/kb_layout = .*/kb_layout = $new_layouts/" "$CONFIG_FILE"
+    
+    # Reload hyprland config
+    hyprctl reload >/dev/null 2>&1
+}
+
+displayMenu() {
+    # Common keyboard layouts
+    local layouts=(
+        "us:English (US)"
+        "gb:English (UK)" 
+        "de:German"
+        "fr:French"
+        "es:Spanish"
+        "it:Italian"
+        "ru:Russian"
+        "gr:Greek"
+        "tr:Turkish"
+        "jp:Japanese"
+        "kr:Korean"
+        "cn:Chinese"
+        "ar:Arabic"
+        "he:Hebrew"
+        "pt:Portuguese"
+        "nl:Dutch"
+        "se:Swedish"
+        "no:Norwegian"
+        "dk:Danish"
+        "fi:Finnish"
+        "pl:Polish"
+        "cz:Czech"
+        "hu:Hungarian"
+        "ro:Romanian"
+        "bg:Bulgarian"
+        "hr:Croatian"
+        "sk:Slovak"
+        "si:Slovenian"
+        "ee:Estonian"
+        "lv:Latvian"
+        "lt:Lithuanian"
+    )
+    
+    while true; do
+        clear
+        yprint -c --color=yellow "$DISTRO_NAME $TITLE"
+        
+        # Create menu items with status
+        menu_items=""
+        for layout_info in "${layouts[@]}"; do
+            layout_code="${layout_info%%:*}"
+            layout_name="${layout_info##*:}"
+            
+            if is_layout_enabled "$layout_code"; then
+                status="[A]"
+            else
+                status="[ ]"
+            fi
+            
+            menu_items+="$status $layout_name ($layout_code)\n"
+        done
+        
+        menu_items+="$EXIT_TEXT\n"
+        
+        height=$(($(tput lines) - 1))
+        choice=$(echo -e "$menu_items" | fzf \
+                --ansi \
+                --layout=reverse \
+                --prompt="  > " \
+                --height=$height \
+                --header="Current layouts: $(get_current_layouts | tr ' ' ',')")
+        
+        case "$choice" in
+            *"$EXIT_TEXT"*) exit 0 ;;
+            "") exit 0 ;;
+            *)
+                # Extract layout code from choice
+                layout_code=$(echo "$choice" | grep -o '([^)]*' | tr -d '(')
+                if [ -n "$layout_code" ]; then
+                    toggle_layout "$layout_code"
+                fi
+                ;;
+        esac
+    done
+}
+
+OPEN_TERMINAL=false
+EXIT_TEXT="󰈆  Exit"
+
+while getopts "the" opt; do
+    case $opt in
+        e) EXIT_TEXT="󰌍  Back" ;;
+        t) OPEN_TERMINAL=true ;;
+        h) showHelp ;;
+        \?) echo "Invalid option. Use -h for help."; exit 1 ;;
+    esac
+done
+
+if [ "$OPEN_TERMINAL" = true ]; then
+    openTerminal
+    exit 0
+fi
+
+displayMenu

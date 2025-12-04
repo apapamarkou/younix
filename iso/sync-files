@@ -43,3 +43,27 @@ sudo rsync -a "$SOURCE/"* "$DEST/"
 # sync /etc/environment
 echo "Syncing to airootfs/etc/environment: /etc/environment"
 sudo rsync -a --delete /etc/environment "$SCRIPT_DIR/airootfs/etc/"
+
+# sync gtk settings
+echo "Syncing to airootfs/etc/gtk-3.0: /etc/gtk-3.0"
+sudo rsync -a --delete /etc/gtk-3.0 "$SCRIPT_DIR/airootfs/etc/"
+echo "Syncing to airootfs/etc/gtk-4.0: /etc/gtk-4.0"
+sudo rsync -a --delete /etc/gtk-4.0 "$SCRIPT_DIR/airootfs/etc/"
+
+# sync /usr/share/hypr/conf.d/*
+echo "Syncing to airootfs/usr/share/hypr/conf.d: /usr/share/hypr/conf.d"
+sudo rsync -a --delete /usr/share/hypr/conf.d "$SCRIPT_DIR/airootfs/usr/share/hypr/"
+
+# sync /etc/fish
+echo "Syncing to airootfs/etc/fish: /etc/fish"
+sudo rsync -a --delete /etc/fish "$SCRIPT_DIR/airootfs/etc/"
+
+# sync /usr/local/share/shell
+echo "Syncing to airootfs/usr/local/share/shell: /usr/local/share/shell"
+sudo rsync -a --delete /usr/local/share/shell "$SCRIPT_DIR/airootfs/usr/local/share/"
+
+# sync /usr/share/backgrounds
+echo "Syncing to airootfs/usr/share/backgrounds: /usr/share/backgrounds"
+sudo rsync -a --delete /usr/share/backgrounds "$SCRIPT_DIR/airootfs/usr/share/"
+
+echo "✅ Sync completed."

@@ -1,0 +1,337 @@
+#!/bin/bash
+
+# Standard YoUNiX Control script template
+MUTE_NOTIFY=false
+MUTE_ECHO=false
+SCRIPT_NAME=$(basename "$0")
+TITLE="Calculator"
+ans=0
+
+showHelp() {
+    echo "$DISTRO_NAME $TITLE"
+    echo "Usage: $SCRIPT_NAME [OPTIONS]"
+    echo "Options:"
+    echo "  -t    Open in terminal"
+    echo "  -h    Show this help"
+    echo "Arguments can be combined: -vn, -nv, etc."
+    exit 0
+}
+
+openTerminal() {
+    nohup flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=80 --lines=25 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME $args > /dev/null 2>&1 &
+}
+
+printMessage() {
+    if [ "$MUTE_NOTIFY" = false ]; then
+        notify-send "$@"
+    fi
+    if [ "$MUTE_ECHO" = false ]; then
+        echo -e "$@"
+    fi
+}
+
+basic_calculator() {
+    while true; do
+        clear
+        yprint -c --color=yellow "$DISTRO_NAME Basic Calculator"
+        echo "Last result: $ans"
+        echo
+        read -p "Expression: " expr
+        
+        [ -z "$expr" ] && break
+        
+        expr=$(echo "$expr" | sed "s/ans/$ans/g")
+        result=$(echo "$expr" | bc -l 2>/dev/null)
+        if [ $? -eq 0 ]; then
+            ans=$result
+            echo "Result: $ans"
+        else
+            echo "Error: Invalid expression"
+        fi
+        read -p "Press Enter to continue..."
+    done
+}
+
+scientific_calculator() {
+    while true; do
+        clear
+        yprint -c --color=yellow "$DISTRO_NAME Scientific Calculator"
+        [ "$expr" = "?" ] && ( echo; show_functions; )
+        echo
+        echo "Last result: $ans"
+        echo
+        echo "Enter expression or '?' for help"
+        echo
+        read -p "Expression: " expr
+        
+        [ -z "$expr" ] && break
+        [ "$expr" = "?" ] && continue;
+        
+        expr=$(echo "$expr" | sed "s/ans/$ans/g")
+        # Add math library functions
+        expr=$(echo "$expr" | sed 's/sin(/s(/g; s/cos(/c(/g; s/tan(/t(/g; s/log(/l(/g; s/pi/3.14159/g; s/e/2.71828/g')
+        result=$(echo "scale=6; $expr" | bc -l 2>/dev/null)
+        if [ $? -eq 0 ]; then
+            ans=$result
+            echo "Result: $ans"
+        else
+            echo "Error: Invalid expression"
+        fi
+        read -p "Press Enter to continue..."
+    done
+}
+
+show_units() {
+    echo -e "\033[36mAvailable units:\033[0m"
+    echo -e "\033[36mLength:\033[0m km, m, cm, mm, miles, yards, feet, inches"
+    echo -e "\033[36mWeight:\033[0m kg, g, lb, oz"
+    echo -e "\033[36mTemperature:\033[0m C, F, K"
+    echo -e "\033[36mCurrency:\033[0m"
+    echo "  USD (US Dollar), EUR (Euro), GBP (British Pound)"
+    echo "  JPY (Japanese Yen), CNY (Chinese Yuan), CHF (Swiss Franc)"
+    echo "  RUB (Russian Ruble), TRY (Turkish Lira), CAD (Canadian Dollar)"
+    echo "  AUD (Australian Dollar)"
+}
+
+show_functions() {
+    echo -e "\033[36mAvailable functions:\033[0m"
+    echo "sin(x), cos(x), tan(x), sqrt(x), log(x), exp(x)"
+    echo -e "\033[36mBasic:\033[0m +, -, *, /, %, ^, ()"
+    echo -e "\033[36mConstants:\033[0m pi (3.14159), e (2.71828)"
+}
+
+normalize_unit() {
+    local unit="$1"
+    case "$unit" in
+        "kilometers"|"kilometer") echo "km" ;;
+        "meters"|"meter"|"metres"|"metre") echo "m" ;;
+        "centimeters"|"centimeter"|"centimetres"|"centimetre") echo "cm" ;;
+        "millimeters"|"millimeter"|"millimetres"|"millimetre") echo "mm" ;;
+        "kilograms"|"kilogram") echo "kg" ;;
+        "grams"|"gram") echo "g" ;;
+        "pounds"|"pound") echo "lb" ;;
+        "ounces"|"ounce") echo "oz" ;;
+        "celsius") echo "C" ;;
+        "fahrenheit") echo "F" ;;
+        "kelvin") echo "K" ;;
+        *) echo "$unit" ;;
+    esac
+}
+
+convert_to_meters() {
+    local value="$1" unit="$2"
+    case "$unit" in
+        "km") echo "$value * 1000" | bc ;;
+        "m") echo "$value" ;;
+        "cm") echo "$value / 100" | bc ;;
+        "mm") echo "$value / 1000" | bc ;;
+        "miles") echo "$value * 1609.34" | bc ;;
+        "yards") echo "$value * 0.9144" | bc ;;
+        "feet") echo "$value * 0.3048" | bc ;;
+        "inches") echo "$value * 0.0254" | bc ;;
+    esac
+}
+
+convert_from_meters() {
+    local value="$1" unit="$2"
+    case "$unit" in
+        "km") echo "$value / 1000" | bc ;;
+        "m") echo "$value" ;;
+        "cm") echo "$value * 100" | bc ;;
+        "mm") echo "$value * 1000" | bc ;;
+        "miles") echo "$value / 1609.34" | bc ;;
+        "yards") echo "$value / 0.9144" | bc ;;
+        "feet") echo "$value / 0.3048" | bc ;;
+        "inches") echo "$value / 0.0254" | bc ;;
+    esac
+}
+
+convert_to_kg() {
+    local value="$1" unit="$2"
+    case "$unit" in
+        "kg") echo "$value" ;;
+        "g") echo "$value / 1000" | bc ;;
+        "lb") echo "$value / 2.20462" | bc ;;
+        "oz") echo "$value / 35.274" | bc ;;
+    esac
+}
+
+convert_from_kg() {
+    local value="$1" unit="$2"
+    case "$unit" in
+        "kg") echo "$value" ;;
+        "g") echo "$value * 1000" | bc ;;
+        "lb") echo "$value * 2.20462" | bc ;;
+        "oz") echo "$value * 35.274" | bc ;;
+    esac
+}
+
+convert_temperature() {
+    local value="$1" from="$2" to="$3"
+    case "$from-$to" in
+        "C-F") echo "scale=2; $value * 9/5 + 32" | bc ;;
+        "F-C") echo "scale=2; ($value - 32) * 5/9" | bc ;;
+        "C-K") echo "scale=2; $value + 273.15" | bc ;;
+        "K-C") echo "scale=2; $value - 273.15" | bc ;;
+        "F-K") echo "scale=2; ($value - 32) * 5/9 + 273.15" | bc ;;
+        "K-F") echo "scale=2; ($value - 273.15) * 9/5 + 32" | bc ;;
+        *) echo "$value" ;;
+    esac
+}
+
+convert_currency() {
+    local value="$1" from="$2" to="$3"
+    
+    if [ "$from" = "$to" ]; then
+        echo "$value"
+        return
+    fi
+    
+    # Get exchange rate from Frankfurter API
+    local rate=$(curl -s "https://api.frankfurter.app/latest?from=$from&to=$to" | grep -o '"'$to'":[0-9.]*' | cut -d':' -f2)
+    
+    if [ -n "$rate" ]; then
+        echo "scale=4; $value * $rate" | bc
+    else
+        echo "Error: Unable to get exchange rate"
+        return 1
+    fi
+}
+
+unit_converter() {
+    while true; do
+        clear
+        yprint -c --color=yellow "$DISTRO_NAME Unit Converter"
+        [ "$input" = "?" ] && ( echo; show_units; )
+        echo
+        echo "Enter conversion (e.g., '10 km to meters') or '?' for help"
+        echo
+        read -p "Convert: " input
+        
+        [ -z "$input" ] && break
+        [ "$input" = "?" ] && continue;
+        
+        if [[ "$input" =~ ^([0-9.]+)[[:space:]]+([a-zA-Z]+)[[:space:]]+to[[:space:]]+([a-zA-Z]+)$ ]]; then
+            value="${BASH_REMATCH[1]}"
+            from=$(normalize_unit "${BASH_REMATCH[2]}")
+            to=$(normalize_unit "${BASH_REMATCH[3]}")
+            
+            # Length conversions
+            if [[ "$from" =~ ^(km|m|cm|mm|miles|yards|feet|inches)$ ]] && [[ "$to" =~ ^(km|m|cm|mm|miles|yards|feet|inches)$ ]]; then
+                meters=$(convert_to_meters "$value" "$from")
+                result=$(convert_from_meters "$meters" "$to")
+            # Weight conversions
+            elif [[ "$from" =~ ^(kg|g|lb|oz)$ ]] && [[ "$to" =~ ^(kg|g|lb|oz)$ ]]; then
+                kg=$(convert_to_kg "$value" "$from")
+                result=$(convert_from_kg "$kg" "$to")
+            # Temperature conversions
+            elif [[ "$from" =~ ^(C|F|K)$ ]] && [[ "$to" =~ ^(C|F|K)$ ]]; then
+                result=$(convert_temperature "$value" "$from" "$to")
+            # Currency conversions
+            elif [[ "$from" =~ ^(USD|EUR|GBP|JPY|CNY|CHF|RUB|TRY|CAD|AUD)$ ]] && [[ "$to" =~ ^(USD|EUR|GBP|JPY|CNY|CHF|RUB|TRY|CAD|AUD)$ ]]; then
+                echo "Fetching exchange rate..."
+                result=$(convert_currency "$value" "$from" "$to")
+                if [[ "$result" == *"Error"* ]]; then
+                    echo "$result"
+                    read -p "Press Enter to continue..."
+                    continue
+                fi
+            else
+                echo "Conversion not supported"
+                read -p "Press Enter to continue..."
+                continue
+            fi
+            
+            echo "Result: $result $to"
+        else
+            echo "Invalid format. Use: '10 km to meters'"
+        fi
+        read -p "Press Enter to continue..."
+    done
+}
+
+quiz_mode() {
+    score=0
+    while true; do
+        clear
+        yprint -c --color=yellow "$DISTRO_NAME Math Quiz"
+        echo "Score: $score"
+        echo
+        
+        a=$((RANDOM % 20 + 1))
+        b=$((RANDOM % 20 + 1))
+        op=$((RANDOM % 4))
+        
+        case $op in
+            0) problem="$a + $b"; answer=$((a + b)) ;;
+            1) problem="$a - $b"; answer=$((a - b)) ;;
+            2) problem="$a * $b"; answer=$((a * b)) ;;
+            3) problem="$a / $b"; answer=$((a / b)) ;;
+        esac
+        
+        read -p "Problem: $problem = ? (or 'q' to quit): " user_answer
+        [ "$user_answer" = "q" ] && break
+        
+        if [ "$user_answer" = "$answer" ]; then
+            echo "Correct! +1 point"
+            ((score++))
+        else
+            echo "Wrong! Answer was $answer"
+        fi
+        read -p "Press Enter for next problem..."
+    done
+}
+
+displayMenu() {
+    while true; do
+        # Create menu with preview text
+        menu_items=$(cat << EOF
+Basic Calculator|Perform + - * / % calculations. Use 'ans' for last result.
+Scientific Calculator|sin, cos, tan, log, sqrt. Use 'ans' for last result.
+Unit Converter|Convert between units and currencies. Opens sub-menu.
+Quiz Mode|Solve random math problems and track your score.
+Exit|Quit the calculator.
+EOF
+)
+        
+        height=$(($(tput lines) - 1))
+        choice=$(echo "$menu_items" | fzf \
+            --delimiter='|' \
+            --with-nth=1 \
+            --preview='echo {2}' \
+            --preview-window=right:50%:wrap \
+            --prompt="YoUNiX Calculator > " \
+            --height=$height \
+            --layout=reverse \
+            --header="$DISTRO_NAME Calculator - Select mode (use arrow keys)")
+        
+        [ -z "$choice" ] && exit 0
+        
+        case "$(echo "$choice" | cut -d'|' -f1)" in
+            "Basic Calculator") basic_calculator ;;
+            "Scientific Calculator") scientific_calculator ;;
+            "Unit Converter") unit_converter ;;
+            "Quiz Mode") quiz_mode ;;
+            "Exit") exit 0 ;;
+        esac
+    done
+}
+
+OPEN_TERMINAL=false
+EXIT_TEXT="󰈆  Exit"
+
+while getopts "the" opt; do
+    case $opt in
+        e) EXIT_TEXT="󰌍  Back" ;;
+        t) OPEN_TERMINAL=true ;;
+        h) showHelp ;;
+        \?) echo "Invalid option. Use -h for help."; exit 1 ;;
+    esac
+done
+
+if [ "$OPEN_TERMINAL" = true ]; then
+    openTerminal
+    exit 0
+fi
+
+displayMenu

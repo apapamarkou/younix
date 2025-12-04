@@ -13,4 +13,4 @@
 
 # Text Editor window launcher for YOUNIX desktop environment
 
-terminal --title="$DISTRO_NAME Text Editor" micro "$1"
+terminal --title="$DISTRO_NAME Text Editor" $TEXT_EDITOR "$1"

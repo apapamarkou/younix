@@ -20,14 +20,18 @@ TITLE=""
 BODY=""
 LEFT_ACTION=""
 RIGHT_ACTION=""
+PRIMARY_TITLE=""
+SECONDARY_TITLE=""
 TIME=""
 
 showHelp() {
     echo "$DISTRO_NAME $SCRIPT_NAME"
     echo "Usage: $SCRIPT_NAME [OPTIONS] TITLE BODY"
     echo "Options:"
-    echo "  -l ACTION    Left click action command"
-    echo "  -r ACTION    Right click action command"
+    echo "  -l ACTION    Primary (Left click) action command"
+    echo "  -p ACTION    Primary (Left click) action button title"
+    echo "  -r ACTION    Secondary (Right click) action command"
+    echo "  -s ACTION    Secondary (Right click action button title"
     echo "  -t TIME      Time to show notification (milliseconds)"
     echo "  -h           Show this help"
 }
@@ -37,7 +41,9 @@ args=("$@")
 for ((i=0; i<${#args[@]}; i++)); do
     case "${args[i]}" in
         -l) LEFT_ACTION="${args[i+1]}"; ((i++)) ;;
+        -p) PRIMARY_TITLE="${args[i+1]}"; ((i++)) ;;
         -r) RIGHT_ACTION="${args[i+1]}"; ((i++)) ;;
+        -s) SECONDARY_TITLE="${args[i+1]}"; ((i++)) ;;
         -t) TIME="${args[i+1]}"; ((i++)) ;;
         -h) showHelp; exit 0 ;;
         -*) echo "Invalid option: ${args[i]}"; exit 1 ;;
@@ -57,8 +63,8 @@ if [[ -n "$LEFT_ACTION" || -n "$RIGHT_ACTION" ]]; then
     [[ -n "$TIME" ]] && cmd+=("-t" "$TIME")
     cmd+=("$TITLE")
     [[ -n "$BODY" ]] && cmd+=("$BODY")
-    [[ -n "$LEFT_ACTION" ]] && cmd+=("--action=left=Left Click")
-    [[ -n "$RIGHT_ACTION" ]] && cmd+=("--action=right=Right Click")
+    [[ -n "$LEFT_ACTION" ]] && cmd+=("--action=left=${PRIMARY_TITLE:-Left Click}")
+    [[ -n "$RIGHT_ACTION" ]] && cmd+=("--action=right=${SECONDARY_TITLE:-Right Click}")
     cmd+=("--wait")
     
     action=$("${cmd[@]}")

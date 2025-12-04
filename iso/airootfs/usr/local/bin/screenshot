@@ -43,8 +43,12 @@ case "$MODE" in
 esac
 
 # Notification with action to open with ksnip
-notify-send -t 10000 -A "Annotate" "Screenshot saved" "$FILE" | while read action; do
-    if [ "$action" = "0" ]; then
-        ksnip "$FILE"
-    fi
+ynotify "Screenshot saved" \
+                "$FILE"  \
+                -t 10000 \
+                -l "$IMAGE_ANNOTATE_EDITOR '$FILE'" \
+                -p "Annotate screenshot" \
+                -r "$IMAGE_EDITOR '$FILE'" \
+                -s "Edit screenshot"
+
 done &

@@ -1,7 +1,4 @@
 .config/autostart
-.config/fish
-.config/gtk-3.0
-.config/gtk-4.0
 .config/hypr
 .config/nnn
 .config/nwg-look
@@ -32,14 +29,12 @@
 .local/share/applications/YoUNiX-Time-Machine.desktop
 .local/share/applications/YoUNiX-Weather-Viewer.desktop
 .local/share/nwg-look
-.local/share/shell
 
 Applications/DropYourAppimagesHere
 Downloads
 Documents/PDF_Docs
 Documents/TXT_Docs
-Pictures/Wallpapers/YoUNiX1.jpg
-Pictures/Wallpapers/YoUNiX2.jpg
+/Pictures/Wallpapers/DropYourWallpapersHere
 .bash_profile
 .bashrc
 .gtkrc-2.0

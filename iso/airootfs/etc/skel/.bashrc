@@ -7,8 +7,8 @@
 
 $SHELL_GREETING
 
-source ~/.local/share/shell/fzf-cdf.bash
-source ~/.local/share/shell/aliases
+source /usr/local/share/shell/fzf-cdf.bash
+source /usr/local/share/shell/aliases
 eval "$(starship init bash)"
 
 

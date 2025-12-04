@@ -17,6 +17,7 @@
     "network",
     "battery",
     "pulseaudio",
+    "hyprland/language",
     "tray",
     "custom/clock",
     "custom/notification",
@@ -61,6 +62,10 @@
     "interval": 1,
     "format": "{}",
     "return-type": "text"
+  },
+  "hyprland/language": {
+    "format": "{short}",
+    "tooltip": false
   },
   "network": {
     "format-wifi": " 󰤨    {essid} ",
@@ -130,7 +135,7 @@
     "exec": "ysystemupdate -m",
     "format": " {} ",
     "interval": 3600,
-    "on-click": "ysystemupdate -t",
+    "on-click": "bash -c 'ysystemupdate -t'",
     "on-click-right": "ysoftware -t",
     "tooltip": true,
     "tooltip-format": "\n    left click: update manager \n\n    right click: software manager \n"

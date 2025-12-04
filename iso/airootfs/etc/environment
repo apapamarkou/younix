@@ -3,8 +3,12 @@
 #
 # Syntax: simple "KEY=VAL" pairs on separate lines
 #
-EDITOR=editor
+EDITOR=gimp
 TEXT_EDITOR=micro
+IMAGE_ANNOTATE_EDITOR=ksnip
+IMAGE_EDITOR=gimp
+VIDEO_PLAYER=mpv
+VIDEO_EDITOR=kdenlive
 SHELL_GREETING=fetch
 VISUAL=/usr/bin/micro
 BROWSER=chromium

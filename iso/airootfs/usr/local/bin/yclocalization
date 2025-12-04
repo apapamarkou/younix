@@ -39,11 +39,12 @@ displayMenu() {
         # relative fzf height by terminal height
         height=$(($(tput lines) - 1))
 
-        choice=$(printf "  Add/Remove Languages\n  Configure Localization\n  Timezone\n$EXIT_TEXT" | fzf --layout=reverse --prompt='  > ' --height=$height);
+        choice=$(printf "  Add/Remove Languages\n󰌓  Keyboard layouts\n  Configure Localization\n  Timezone\n$EXIT_TEXT" | fzf --layout=reverse --prompt='  > ' --height=$height);
         case "$choice" in
             *Remove*) ycaddremovelanguages -e;;
             *Localization*) yclanguages -e ;;
             *Timezone*) yctimezone -e ;;
+            *layouts*) yckeyboard -e ;;
             *) return ;;  # Back ή κενή επιλογή
         esac
     done
