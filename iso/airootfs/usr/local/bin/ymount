@@ -131,6 +131,7 @@ mountPartition() {
         yprint --color=yellow "Mounting $partition to $mount_path..."
         sudo mount "$partition" "$mount_path"
         if [[ $? -eq 0 ]]; then
+            sudo chown $USER:$USER "$mount_path"
             yprint --color=green "Successfully mounted!"
         else
             yprint --color=red "Failed to mount!"

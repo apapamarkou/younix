@@ -35,13 +35,11 @@ showHelp() {
     echo "Usage: $SCRIPT_NAME [OPTIONS]"
     echo "Options:"
     echo "  -t    Open in terminal"
-    echo "  -b    Create backup snapshot"
-    echo "  -n    Backup name (daily/weekly/monthly)"
     echo "  -h    Show this help"
 }
 
 openTerminal() {
-    nohup flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=80 --lines=20 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME > /dev/null 2>&1 &
+    nohup flock -n ~/.config/lock terminal --columns=80 --lines=20 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME > /dev/null 2>&1 &
 }
 
 loadConfig() {
@@ -101,7 +99,7 @@ enterPathManually() {
 
 selectDestination() {
     height=$(($(tput lines) - 1))
-    local choice=$(echo -e "  Browse for folder\n  Enter path manually\n󰌍  Back" | fzf --layout=reverse --prompt="Select destination method > " --height=$height)
+    local choice=$(echo -e "  Browse for folder\n  Enter path manually" | fzf --layout=reverse --prompt="Select destination method > " --height=$height)
     
     case "$choice" in
         *"Browse"*)
@@ -109,9 +107,6 @@ selectDestination() {
             ;;
         *"Enter path"*)
             enterPathManually
-            ;;
-        *) 
-            return
             ;;
     esac
     
@@ -126,82 +121,73 @@ selectDestination() {
 }
 
 createSnapshot() {
-    local backup_name="$1"
-    local interactive="$2"
-    
-    [[ "$interactive" == "true" ]] && clear
-    [[ -z "$DESTINATION" ]] && { yprint --color=red "No destination selected"; [[ "$interactive" == "true" ]] && read -p "Press Enter..."; return; }
+    clear
+    [[ -z "$DESTINATION" ]] && { yprint --color=red "No destination selected"; read -p "Press Enter..."; return; }
     
     local timestamp=$(date +%Y%m%d_%H%M%S)
     local snapshot_name="$timestamp-time-machine-snapshot"
-    [[ -n "$backup_name" ]] && snapshot_name="$timestamp-$backup_name-time-machine-snapshot"
     local snapshot_path="$DESTINATION/$snapshot_name"
     
     # Find latest snapshot for hardlinks
     local latest_snapshot=$(ls -1t "$DESTINATION"/snapshot-* 2>/dev/null | head -1)
     
     yprint --color=yellow "Creating snapshot: $snapshot_name"
-    [[ "$interactive" == "true" ]] && echo
+    echo
     
-    # Build rsync command
-    local rsync_cmd="rsync -avH --delete"
-    [[ "$interactive" != "true" ]] && rsync_cmd="$rsync_cmd --quiet"
+    # Build rsync command (silent)
+    local rsync_cmd="sudo rsync -avH --delete --quiet"
     rsync_cmd="$rsync_cmd --exclude={'/dev/*','/home/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}"
     
     [[ -n "$latest_snapshot" ]] && rsync_cmd="$rsync_cmd --link-dest=$latest_snapshot"
     
     rsync_cmd="$rsync_cmd / $snapshot_path/"
     
-    if [[ "$interactive" == "true" ]]; then
-        # Interactive mode with progress bar
-        local frames=(
-            "[        ]  Backing up files..."
-            "[=       ]  Backing up files..."
-            "[==      ]  Backing up files..."
-            "[===     ]  Backing up files..."
-            "[====    ]  Backing up files..."
-            "[ ====   ]  Backing up files..."
-            "[  ====  ]  Backing up files..."
-            "[   ==== ]  Backing up files..."
-            "[    ====]  Backing up files..."
-            "[     ===]  Backing up files..."
-            "[      ==]  Backing up files..."
-            "[       =]  Backing up files..."
-        )
-        local i=0
-        eval $rsync_cmd &
-        
-        local rsync_pid=$!
-        
-        while kill -0 $rsync_pid 2>/dev/null; do
-            printf "\r%s" "${frames[$i]}"
-            i=$(((i+1) % ${#frames[@]}))
-            sleep 0.1
-            read -t 0.1 -n 1 key 2>/dev/null
-            if [[ "$key" == "A" || "$key" == "a" ]]; then
-                kill $rsync_pid 2>/dev/null
-                printf "\r"
-                yprint --color=red "  Snapshot creation aborted!"
-                read -p "Press Enter to continue..."
-                return
-            fi
-        done
-        printf "\r"
-    else
-        # Non-interactive mode
-        eval $rsync_cmd
-    fi
+    # Start progress bar animation
+    local frames=(
+        "[        ]  Backing up files..."
+        "[=       ]  Backing up files..."
+        "[==      ]  Backing up files..."
+        "[===     ]  Backing up files..."
+        "[====    ]  Backing up files..."
+        "[ ====   ]  Backing up files..."
+        "[  ====  ]  Backing up files..."
+        "[   ==== ]  Backing up files..."
+        "[    ====]  Backing up files..."
+        "[     ===]  Backing up files..."
+        "[      ==]  Backing up files..."
+        "[       =]  Backing up files..."
+    )
+    local i=0
+    eval $rsync_cmd &
     
-    wait $rsync_pid 2>/dev/null
+    local rsync_pid=$!
+    
+    while kill -0 $rsync_pid 2>/dev/null; do
+        printf "\r%s" "${frames[$i]}"
+        i=$(((i+1) % ${#frames[@]}))
+        sleep 0.1
+        # Check for abort key press
+        read -t 0.1-n 1 key 2>/dev/null
+        if [[ "$key" == "A" || "$key" == "a" ]]; then
+            kill $rsync_pid 2>/dev/null
+            printf "\r"
+            yprint --color=red "  Snapshot creation aborted!"
+            read -p "Press Enter to continue..."
+            return
+        fi
+    done
+    
+    wait $rsync_pid
     local exit_code=$?
     
+    printf "\r"
     if [[ $exit_code -eq 0 ]]; then
-        yprint --color=green "  Snapshot created successfully!"
+        yprint --color=green "  Snapshot created successfully!"
     else
         yprint --color=red "󰬅  Snapshot creation failed!"
     fi
     
-    [[ "$interactive" == "true" ]] && read -p "Press Enter to continue..."
+    read -p "Press Enter to continue..."
 }
 
 toggleDaily() {
@@ -209,7 +195,6 @@ toggleDaily() {
         DAILY_ENABLED=false
     else
         DAILY_ENABLED=true
-        createSystemdFiles "daily"
     fi
     saveConfig
 }
@@ -219,7 +204,6 @@ toggleWeekly() {
         WEEKLY_ENABLED=false
     else
         WEEKLY_ENABLED=true
-        createSystemdFiles "weekly"
     fi
     saveConfig
 }
@@ -229,7 +213,6 @@ toggleMonthly() {
         MONTHLY_ENABLED=false
     else
         MONTHLY_ENABLED=true
-        createSystemdFiles "monthly"
     fi
     saveConfig
 }
@@ -383,9 +366,9 @@ snapshotMenu() {
         clear
         yprint -c --color=yellow "Snapshot: $snapshot"
         height=$(($(tput lines) - 1))
-        choice=$(echo -e "󰦛  Restore This Snapshot\n󰆴  Delete Snapshot\n󰑕  Rename Snapshot\n  View Snapshot Details\n󰌍  Back to Main Menu" | fzf \
+        choice=$(echo -e "󰦛  Restore This Snapshot\n󰆴  Delete Snapshot\n󰑕  Rename Snapshot\n  View Snapshot Details\n󰌍  Back to Main Menu" | fzf \
             --layout=reverse \
-            --prompt="  Select action > " \
+            --prompt="  Select action > " \
             --height=$height)
         
         [[ -z "$choice" ]] && break
@@ -398,50 +381,6 @@ snapshotMenu() {
             *"Back"*) break ;;
         esac
     done
-}
-
-createSystemdFiles() {
-    local name="$1"
-    local service_file="/etc/systemd/system/ytimemachine-$name.service"
-    local timer_file="/etc/systemd/system/ytimemachine-$name.timer"
-    
-    sudo tee "$service_file" > /dev/null << EOF
-[Unit]
-Description=YoUNiX Time Machine $name Backup
-Wants=ytimemachine-$name.timer
-
-[Service]
-Type=oneshot
-ExecStart=/home/user/.local/bin/ytimemachine -b -n $name
-User=root
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    
-    local schedule
-    case "$name" in
-        "daily") schedule="daily" ;;
-        "weekly") schedule="weekly" ;;
-        "monthly") schedule="monthly" ;;
-    esac
-    
-    sudo tee "$timer_file" > /dev/null << EOF
-[Unit]
-Description=YoUNiX Time Machine $name Backup Timer
-Requires=ytimemachine-$name.service
-
-[Timer]
-OnCalendar=$schedule
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-EOF
-    
-    sudo systemctl daemon-reload
-    sudo systemctl enable "ytimemachine-$name.timer"
-    sudo systemctl start "ytimemachine-$name.timer"
 }
 
 displayMenu() {
@@ -467,25 +406,25 @@ displayMenu() {
         local dest_text="  Select Destination first!"
         [[ -n "$DESTINATION" ]] && dest_text="  Change Destination ($DESTINATION)"
         
-        local daily_text="  Enable Daily Backups"
-        [[ "$DAILY_ENABLED" == true ]] && daily_text="  Disable Daily Backups"
+        local daily_text="󰃭  Enable Daily Backups"
+        [[ "$DAILY_ENABLED" == true ]] && daily_text="󰃭  Disable Daily Backups"
         
-        local weekly_text="  Enable Weekly Backups"
-        [[ "$WEEKLY_ENABLED" == true ]] && weekly_text="  Disable Weekly Backups"
+        local weekly_text="  Enable Weekly Backups"
+        [[ "$WEEKLY_ENABLED" == true ]] && weekly_text="  Disable Weekly Backups"
         
-        local monthly_text="  Enable Monthly Backups"
-        [[ "$MONTHLY_ENABLED" == true ]] && monthly_text="  Disable Monthly Backups"
+        local monthly_text="󰸗  Enable Monthly Backups"
+        [[ "$MONTHLY_ENABLED" == true ]] && monthly_text="󰸗  Disable Monthly Backups"
         
         # Build options
         local options="$dest_text\n󰈆  Exit"
         
         if [[ -n "$DESTINATION" ]]; then
-            options="  Create Snapshot now\n$dest_text\n$daily_text"
-            [[ "$DAILY_ENABLED" == true ]] && options="$options\n󰆼  Keep $DAILY_BACKUPS Daily Backups"
+            options="󰆓  Create Snapshot\n$dest_text\n$daily_text"
+            [[ "$DAILY_ENABLED" == true ]] && options="$options\n󰳿  Keep $DAILY_BACKUPS Daily Backups"
             options="$options\n$weekly_text"
-            [[ "$WEEKLY_ENABLED" == true ]] && options="$options\n󰆼  Keep $WEEKLY_BACKUPS Weekly Backups"
+            [[ "$WEEKLY_ENABLED" == true ]] && options="$options\n󰳿  Keep $WEEKLY_BACKUPS Weekly Backups"
             options="$options\n$monthly_text"
-            [[ "$MONTHLY_ENABLED" == true ]] && options="$options\n󰆼  Keep $MONTHLY_BACKUPS Monthly Backups"
+            [[ "$MONTHLY_ENABLED" == true ]] && options="$options\n󰳿  Keep $MONTHLY_BACKUPS Monthly Backups"
             options="$options\n󰈆  Exit"
         fi
         
@@ -506,7 +445,7 @@ displayMenu() {
         [[ -z "$choice" ]] && exit 0
         
         case "$choice" in
-            *"Create Snapshot"*) createSnapshot "" "true" ;;
+            *"Create Snapshot"*) createSnapshot ;;
             *"Destination"*) selectDestination ;;
             *"Keep"*" Daily"*) setDailyCount ;;
             *"Keep"*" Weekly"*) setWeeklyCount ;;
@@ -521,24 +460,14 @@ displayMenu() {
 }
 
 OPEN_TERMINAL=false
-BACKUP_MODE=false
-BACKUP_NAME=""
 
-while getopts "tbn:h" opt; do
+while getopts "th" opt; do
     case $opt in
         t) OPEN_TERMINAL=true ;;
-        b) BACKUP_MODE=true ;;
-        n) BACKUP_NAME="$OPTARG" ;;
         h) showHelp; exit 0 ;;
         \?) echo "Invalid option. Use -h for help."; exit 1 ;;
     esac
 done
-
-if [[ "$BACKUP_MODE" == true ]]; then
-    loadConfig
-    createSnapshot "$BACKUP_NAME" "false"
-    exit 0
-fi
 
 if [[ "$OPEN_TERMINAL" == true ]]; then
     openTerminal

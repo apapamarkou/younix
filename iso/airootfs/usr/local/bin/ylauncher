@@ -438,6 +438,11 @@ class AppLauncher(QMainWindow):
     def discover_new_applications(self):
         """Scans for new desktop files, identifies removed ones, updates the data, and saves."""
         
+        # Create config file if it doesn't exist
+        if not os.path.exists(self.config_file):
+            self.data = {"applications": {}, "folders": {}}
+            self.save_data()
+        
         # 1. Get all currently found desktop files on the system
         found_apps = self._scan_desktop_files()
         found_app_keys = {(app["name"], app["exec"]) for app in found_apps}

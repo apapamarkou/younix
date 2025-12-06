@@ -27,7 +27,7 @@ show_help() {
 }
 
 open_terminal() {
-    nohup flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=55 --lines=17 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME
+    nohup flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=55 --lines=17 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME && $RETURN_FOCUS_COMMAND
 }
 
 runInTerminal() {
@@ -41,9 +41,13 @@ display_menu() {
         # relative fzf height by terminal height
         height=$(($(tput lines) - 1))
 
-        choice=$(echo -e "󰚰  Update System\n󱣡  System Malware Shield\n󰿞  Clean Unused Packages\n  Inspect & Free Space\n  Boot Options\n󰁨  Fix Keyring\n$EXIT_TEXT" | fzf --layout=reverse --prompt="  Maintenance > " --height=$height)
+        choice=$(echo -e "󱫐  Time Machine\n󰥞  Backup home\n󰚰  Update System\n󱣡  System Malware Shield\n󰿞  Clean Unused Packages\n  Inspect & Free Space\n  Boot Options\n󰁨  Fix Keyring\n$EXIT_TEXT" | fzf --layout=reverse --prompt="  Maintenance > " --height=$height)
         
         case "$choice" in
+            *Backup*) ybackup -t;;
+            *Machine*) 
+                ytimemachine -t"
+                ;;
             *Update*) ysystemupdate -e;;
             *Clean*) runInTerminal clean-orphaned ;;
             *Keyring*) runInTerminal fix-keyring ;;
