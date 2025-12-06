@@ -38,13 +38,13 @@ display_menu() {
         # relative fzf height by terminal height
         height=$(($(tput lines) - 1))
 
-        choice=$(echo -e "󰍹  Display\n  Look & Theme\n  System Monitor\n󰀂  Network\n  Bluetooth\n  Terminal Preferences\n󰗅  Sound\n  Localization\n  System Maintenance\n  Users/Groups\n⚡ Energy\n󰐥  Power Actions\n  Exit" | fzf --layout=reverse --prompt="  > " --height=$height)
+        choice=$(echo -e "󰍹  Display\n  Look & Theme\n  System Control\n󰀂  Network\n  Bluetooth\n  Terminal Preferences\n󰗅  Sound\n  Localization\n  System Maintenance\n  Users/Groups\n⚡ Energy\n󰐥  Power Actions\n  Exit" | fzf --layout=reverse --prompt="  > " --height=$height)
         [ -z "$choice" ] && exit 0
         
         case "$choice" in
             *Display*) ycdisplay -e ;;
             *Look*) yclook -e ;;
-            *Monitor*) ycsystemmonitor -e ;;
+            *Control*) ycsystemcontrol -e ;;
             *Network*) netconf ;;
             *Bluetooth*) bluetoothwindow ;;
             *Terminal*) xfce4-terminal --preferences ;;

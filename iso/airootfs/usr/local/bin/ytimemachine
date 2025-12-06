@@ -187,6 +187,8 @@ createSnapshot() {
             fi
         done
         printf "\r"
+        notify-send "Snapshot Created" \
+            "Snapshot $snapshot_name created successfully at $DESTINATION."
     else
         # Non-interactive mode
         eval $rsync_cmd
@@ -197,8 +199,15 @@ createSnapshot() {
     
     if [[ $exit_code -eq 0 ]]; then
         yprint --color=green "  Snapshot created successfully!"
+        notify-send "Snapshot Created" \
+            "Snapshot $snapshot_name created successfully at $DESTINATION."
+        
+        # Clean old backups based on retention policy
+        [[ -n "$backup_name" ]] && cleanOldBackups "$backup_name"
     else
         yprint --color=red "󰬅  Snapshot creation failed!"
+        notify-send -u critical "Snapshot Failed" \
+            "Failed to create snapshot $snapshot_name. Check logs for details."
     fi
     
     [[ "$interactive" == "true" ]] && read -p "Press Enter to continue..."
@@ -207,6 +216,8 @@ createSnapshot() {
 toggleDaily() {
     if [[ "$DAILY_ENABLED" == true ]]; then
         DAILY_ENABLED=false
+        sudo systemctl stop ytimemachine-daily.timer
+        sudo systemctl disable ytimemachine-daily.timer
     else
         DAILY_ENABLED=true
         createSystemdFiles "daily"
@@ -217,6 +228,8 @@ toggleDaily() {
 toggleWeekly() {
     if [[ "$WEEKLY_ENABLED" == true ]]; then
         WEEKLY_ENABLED=false
+        sudo systemctl stop ytimemachine-weekly.timer
+        sudo systemctl disable ytimemachine-weekly.timer
     else
         WEEKLY_ENABLED=true
         createSystemdFiles "weekly"
@@ -227,6 +240,8 @@ toggleWeekly() {
 toggleMonthly() {
     if [[ "$MONTHLY_ENABLED" == true ]]; then
         MONTHLY_ENABLED=false
+        sudo systemctl stop ytimemachine-monthly.timer
+        sudo systemctl disable ytimemachine-monthly.timer
     else
         MONTHLY_ENABLED=true
         createSystemdFiles "monthly"
@@ -259,6 +274,29 @@ setMonthlyCount() {
         MONTHLY_BACKUPS=$count
         saveConfig
     }
+}
+
+cleanOldBackups() {
+    local backup_type="$1"
+    local keep_count
+    
+    case "$backup_type" in
+        "daily") keep_count=$DAILY_BACKUPS ;;
+        "weekly") keep_count=$WEEKLY_BACKUPS ;;
+        "monthly") keep_count=$MONTHLY_BACKUPS ;;
+        *) return ;;
+    esac
+    
+    # Get list of backups for this type, sorted by date (newest first)
+    local backups=$(ls -1t "$DESTINATION"/ 2>/dev/null | grep "$backup_type-time-machine-snapshot")
+    local count=$(echo "$backups" | wc -l)
+    
+    # Delete old backups if count exceeds keep_count
+    if [[ $count -gt $keep_count ]]; then
+        echo "$backups" | tail -n +$((keep_count + 1)) | while read -r old_backup; do
+            sudo rm -rf "$DESTINATION/$old_backup"
+        done
+    fi
 }
 
 restoreSnapshot() {

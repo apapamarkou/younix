@@ -1,0 +1,55 @@
+#!/bin/bash
+
+monitor_events() {
+    dbus-monitor --system "type='signal',sender='org.freedesktop.UDisks2',interface='org.freedesktop.DBus.ObjectManager',member='InterfacesAdded'" |
+    while read -r line; do
+        # Περιμένουμε τη γραμμή που έχει το block device path
+        if [[ "$line" =~ path\ (/org/freedesktop/UDisks2/block_devices/[^[:space:]]+) ]]; then
+            devpath="${BASH_REMATCH[1]}"
+            devname=$(basename "$devpath")
+            dev="/dev/$devname"
+
+            send_notification "$dev" "$devname"
+        fi
+    done
+}
+
+send_notification() {
+    local dev="$1"
+    local name="$2"
+
+    notify-send \
+        "New drive detected: $name" \
+        "Choose an action" \
+        -A "Mount:mount:$dev" \
+        -A "Open:open:$dev" \
+        -A "Eject:eject:$dev"
+}
+
+handle_action() {
+    case "$1" in
+        mount:*)
+            dev="${1#mount:}"
+            udisksctl mount -b "$dev"
+            ;;
+        open:*)
+            dev="${1#open:}"
+            mountpoint=$(udisksctl info -b "$dev" | awk '/MountPoints/ {print $2}')
+            [ -n "$mountpoint" ] && xdg-open "$mountpoint"
+            ;;
+        eject:*)
+            dev="${1#eject:}"
+            udisksctl unmount -b "$dev"
+            udisksctl power-off -b "$dev"
+            ;;
+    esac
+}
+
+# If script is called with an action → execute action
+if [[ "$1" == *:* ]]; then
+    handle_action "$1"
+    exit 0
+fi
+
+# Otherwise, run the watcher
+monitor_events

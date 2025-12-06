@@ -46,7 +46,7 @@ display_menu() {
         case "$choice" in
             *Backup*) ybackup -t;;
             *Machine*) 
-                ytimemachine -t"
+                ytimemachine -t
                 ;;
             *Update*) ysystemupdate -e;;
             *Clean*) runInTerminal clean-orphaned ;;

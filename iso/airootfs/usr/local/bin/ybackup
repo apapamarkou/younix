@@ -26,7 +26,12 @@ EXCLUDE_FILE="$CONFIG_DIR/excludes"
 DESTINATION=""
 HOURLY_ENABLED=false
 DAILY_ENABLED=false
+WEEKLY_ENABLED=false
 MONTHLY_ENABLED=false
+HOURLY_KEEP=7
+DAILY_KEEP=7
+WEEKLY_KEEP=4
+MONTHLY_KEEP=12
 
 showHelp() {
     echo "$DISTRO_NAME $TITLE"
@@ -39,7 +44,7 @@ showHelp() {
 }
 
 openTerminal() {
-    nohup flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=80 --lines=20 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME > /dev/null 2>&1 &
+    nohup flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=80 --lines=24 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME > /dev/null 2>&1 &
 }
 
 loadConfig() {
@@ -60,7 +65,12 @@ saveConfig() {
 DESTINATION="$DESTINATION"
 HOURLY_ENABLED=$HOURLY_ENABLED
 DAILY_ENABLED=$DAILY_ENABLED
+WEEKLY_ENABLED=$WEEKLY_ENABLED
 MONTHLY_ENABLED=$MONTHLY_ENABLED
+HOURLY_KEEP=$HOURLY_KEEP
+DAILY_KEEP=$DAILY_KEEP
+WEEKLY_KEEP=$WEEKLY_KEEP
+MONTHLY_KEEP=$MONTHLY_KEEP
 EOF
 }
 
@@ -125,8 +135,15 @@ createSnapshot() {
     
     if [[ $exit_code -eq 0 ]]; then
         yprint --color=green "  Snapshot created successfully!"
+        notify-send "Backup created" \
+            "Snapshot $snapshot_name created successfully at $DESTINATION."
+        
+        # Clean old backups based on retention policy
+        [[ -n "$backup_name" ]] && cleanOldBackups "$backup_name"
     else
         yprint --color=red "󰬅  Snapshot creation failed!"
+        notify-send -u critical "Backup failed" \
+            "Failed to create snapshot $snapshot_name. Check logs for details."
     fi
     
     [[ "$interactive" == "true" ]] && read -p "Press Enter to continue..."
@@ -186,7 +203,7 @@ manageExcludes() {
         height=$(($(tput lines) - 1))
         choice=$(echo -e "$options" | fzf \
             --layout=reverse \
-            --prompt="Toggle excludes > " \
+            --prompt="Toggle excludes ([I] is included) > " \
             --height=$height)
         
         [[ -z "$choice" || "$choice" =~ "Back" ]] && break
@@ -219,6 +236,7 @@ EOF
     case "$name" in
         "hourly") schedule="hourly" ;;
         "daily") schedule="daily" ;;
+        "weekly") schedule="weekly" ;;
         "monthly") schedule="monthly" ;;
     esac
     
@@ -243,6 +261,8 @@ EOF
 toggleHourly() {
     if [[ "$HOURLY_ENABLED" == true ]]; then
         HOURLY_ENABLED=false
+        sudo systemctl stop ybackup-hourly.timer
+        sudo systemctl disable ybackup-hourly.timer
     else
         HOURLY_ENABLED=true
         createSystemdFiles "hourly"
@@ -253,6 +273,8 @@ toggleHourly() {
 toggleDaily() {
     if [[ "$DAILY_ENABLED" == true ]]; then
         DAILY_ENABLED=false
+        sudo systemctl stop ybackup-daily.timer
+        sudo systemctl disable ybackup-daily.timer
     else
         DAILY_ENABLED=true
         createSystemdFiles "daily"
@@ -260,14 +282,88 @@ toggleDaily() {
     saveConfig
 }
 
+toggleWeekly() {
+    if [[ "$WEEKLY_ENABLED" == true ]]; then
+        WEEKLY_ENABLED=false
+        sudo systemctl stop ybackup-weekly.timer
+        sudo systemctl disable ybackup-weekly.timer
+    else
+        WEEKLY_ENABLED=true
+        createSystemdFiles "weekly"
+    fi
+    saveConfig
+}
+
 toggleMonthly() {
     if [[ "$MONTHLY_ENABLED" == true ]]; then
         MONTHLY_ENABLED=false
+        sudo systemctl stop ybackup-monthly.timer
+        sudo systemctl disable ybackup-monthly.timer
     else
         MONTHLY_ENABLED=true
         createSystemdFiles "monthly"
     fi
     saveConfig
+}
+
+setHourlyKeep() {
+    height=$(($(tput lines) - 1))
+    local count=$(seq 1 24 | fzf --layout=reverse --prompt="Keep last N hourly backups > " --height=$height)
+    [[ -n "$count" ]] && {
+        HOURLY_KEEP=$count
+        saveConfig
+    }
+}
+
+setDailyKeep() {
+    height=$(($(tput lines) - 1))
+    local count=$(seq 1 7 | fzf --layout=reverse --prompt="Keep last N daily backups > " --height=$height)
+    [[ -n "$count" ]] && {
+        DAILY_KEEP=$count
+        saveConfig
+    }
+}
+
+setWeeklyKeep() {
+    height=$(($(tput lines) - 1))
+    local count=$(seq 1 4 | fzf --layout=reverse --prompt="Keep last N weekly backups > " --height=$height)
+    [[ -n "$count" ]] && {
+        WEEKLY_KEEP=$count
+        saveConfig
+    }
+}
+
+setMonthlyKeep() {
+    height=$(($(tput lines) - 1))
+    local count=$(seq 1 12 | fzf --layout=reverse --prompt="Keep last N monthly backups > " --height=$height)
+    [[ -n "$count" ]] && {
+        MONTHLY_KEEP=$count
+        saveConfig
+    }
+}
+
+cleanOldBackups() {
+    local backup_type="$1"
+    local keep_count
+    
+    case "$backup_type" in
+        "hourly") keep_count=$HOURLY_KEEP ;;
+        "daily") keep_count=$DAILY_KEEP ;;
+        "weekly") keep_count=$WEEKLY_KEEP ;;
+        "monthly") keep_count=$MONTHLY_KEEP ;;
+        *) return ;;
+    esac
+    
+    # Get list of backups for this type, sorted by date (newest first)
+    local backups=$(ls -1t "$DESTINATION"/ 2>/dev/null | grep "$backup_type-home-backup-snapshot")
+    local count=$(echo "$backups" | wc -l)
+    
+    # Delete old backups if count exceeds keep_count
+    if [[ $count -gt $keep_count ]]; then
+        echo "$backups" | tail -n +$((keep_count + 1)) | while read -r old_backup; do
+            rm -rf "$DESTINATION/$old_backup"
+        done
+    fi
 }
 
 deleteSnapshot() {
@@ -320,6 +416,9 @@ displayMenu() {
         local daily_text="  Enable Daily Backups"
         [[ "$DAILY_ENABLED" == true ]] && daily_text="  Disable Daily Backups"
         
+        local weekly_text="  Enable Weekly Backups"
+        [[ "$WEEKLY_ENABLED" == true ]] && weekly_text="  Disable Weekly Backups"
+        
         local monthly_text="  Enable Monthly Backups"
         [[ "$MONTHLY_ENABLED" == true ]] && monthly_text="  Disable Monthly Backups"
         
@@ -327,7 +426,15 @@ displayMenu() {
         local options="$dest_text\n󰈆  Exit"
         
         if [[ -n "$DESTINATION" ]]; then
-            options="  Create Snapshot\n$dest_text\n  Manage Excludes\n$hourly_text\n$daily_text\n$monthly_text\n󰈆  Exit"
+            options="󰄀  Create Snapshot\n$dest_text\n  Manage Excludes\n$hourly_text"
+            [[ "$HOURLY_ENABLED" == true ]] && options="$options\n󰮆  Keep Last $HOURLY_KEEP Hourly"
+            options="$options\n$daily_text"
+            [[ "$DAILY_ENABLED" == true ]] && options="$options\n󰮆  Keep Last $DAILY_KEEP Daily"
+            options="$options\n$weekly_text"
+            [[ "$WEEKLY_ENABLED" == true ]] && options="$options\nudb83udcff  Keep Last $WEEKLY_KEEP Weekly"
+            options="$options\n$monthly_text"
+            [[ "$MONTHLY_ENABLED" == true ]] && options="$options\n󰮆  Keep Last $MONTHLY_KEEP Monthly"
+            options="$options\n󰈆  Exit"
         fi
         
         # Add snapshots if destination exists
@@ -340,7 +447,7 @@ displayMenu() {
         choice=$(echo -e "$options" | fzf \
             --ansi \
             --layout=reverse \
-            --prompt="  Select option > " \
+            --prompt="  > " \
             --height=$height)
         
         [[ -z "$choice" ]] && exit 0
@@ -350,8 +457,13 @@ displayMenu() {
             *"Destination"*) selectDestination ;;
             *"Manage Excludes"*) manageExcludes ;;
             *"Hourly Backups"*) toggleHourly ;;
+            *"Keep"*"Hourly"*) setHourlyKeep ;;
             *"Daily Backups"*) toggleDaily ;;
+            *"Keep"*"Daily"*) setDailyKeep ;;
+            *"Weekly Backups"*) toggleWeekly ;;
+            *"Keep"*"Weekly"*) setWeeklyKeep ;;
             *"Monthly Backups"*) toggleMonthly ;;
+            *"Keep"*"Monthly"*) setMonthlyKeep ;;
             *"Exit"*) exit 0 ;;
             *-*) snapshotMenu "$choice" ;;
         esac
