@@ -1,0 +1,58 @@
+#!/bin/bash
+
+SCRIPT_NAME=$(basename "$0")
+TITLE="System Control"
+
+showHelp() {
+    echo "$DISTRO_NAME $TITLE"
+    echo "Usage: $SCRIPT_NAME [OPTIONS]"
+    echo "Options:"
+    echo "  -t    Open in terminal"
+    echo "  -e    Show Back instead of Exit"
+    echo "  -h    Show this help"
+}
+
+openTerminal() {
+    nohup flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=80 --lines=20 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME > /dev/null 2>&1 &
+}
+
+displayMenu() {
+    while true; do
+        clear
+        yprint -c --color=yellow "$DISTRO_NAME $TITLE"
+        
+        height=$(($(tput lines) - 1))
+        choice=$(echo -e "  Select Default System Monitor Application\n  System Timers\n  System Services\n$EXIT_TEXT" | fzf \
+            --layout=reverse \
+            --prompt="Select option > " \
+            --height=$height)
+        
+        [[ -z "$choice" ]] && exit 0
+        
+        case "$choice" in
+            *"Monitor"*) ycsystemmonitor -e ;;
+            *"Timers"*) ysystemtimers -t ;;
+            *"Services"*) ysystemservices -t ;;
+            *) exit 0 ;;
+        esac
+    done
+}
+
+OPEN_TERMINAL=false
+EXIT_TEXT="󰈆  Exit"
+
+while getopts "teh" opt; do
+    case $opt in
+        t) OPEN_TERMINAL=true ;;
+        e) EXIT_TEXT="󰌍  Back" ;;
+        h) showHelp; exit 0 ;;
+        \?) echo "Invalid option. Use -h for help."; exit 1 ;;
+    esac
+done
+
+if [[ "$OPEN_TERMINAL" == true ]]; then
+    openTerminal
+    exit 0
+fi
+
+displayMenu

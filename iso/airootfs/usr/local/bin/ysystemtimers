@@ -1,0 +1,126 @@
+#!/bin/bash
+
+SCRIPT_NAME=$(basename "$0")
+TITLE="System Timers"
+
+showHelp() {
+    echo "$DISTRO_NAME $TITLE"
+    echo "Usage: $SCRIPT_NAME [OPTIONS]"
+    echo "Options:"
+    echo "  -t    Open in terminal"
+    echo "  -e    Show Back instead of Exit"
+    echo "  -h    Show this help"
+}
+
+openTerminal() {
+    nohup flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=160 --lines=30 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME > /dev/null 2>&1 &
+}
+
+timerMenu() {
+    local timer="$1"
+    while true; do
+        clear
+        yprint -c --color=yellow "$DISTRO_NAME Timer: $timer"
+        echo
+        systemctl status "$timer" 2>/dev/null | head -n 10
+        echo
+        
+        # Check timer state
+        local is_active=$(systemctl is-active "$timer" 2>/dev/null)
+        local is_enabled=$(systemctl is-enabled "$timer" 2>/dev/null)
+        
+        # Build menu based on state
+        local options=""
+        if [[ "$is_active" == "active" ]]; then
+            options="  Stop Timer\n  Restart Timer\n"
+        else
+            options="  Start Timer\n"
+        fi
+        
+        if [[ "$is_enabled" == "enabled" ]]; then
+            options="$options  Disable Timer\n"
+        else
+            options="$options󱘖  Enable Timer\n"
+        fi
+        
+        options="$options󰌍  Back"
+        
+        height=$(($(tput lines) - 1))
+        choice=$(echo -e "$options" | fzf \
+            --layout=reverse \
+            --prompt="Select action > " \
+            --height=$height)
+        
+        [[ -z "$choice" ]] && break
+        
+        case "$choice" in
+            *"Stop"*)
+                sudo systemctl stop "$timer"
+                yprint --color=green "Timer stopped!"
+                sleep 1
+                ;;
+            *"Start"*)
+                sudo systemctl start "$timer"
+                yprint --color=green "Timer started!"
+                sleep 1
+                ;;
+            *"Restart"*)
+                sudo systemctl restart "$timer"
+                yprint --color=green "Timer restarted!"
+                sleep 1
+                ;;
+            *"Enable"*)
+                sudo systemctl enable "$timer"
+                yprint --color=green "Timer enabled!"
+                sleep 1
+                ;;
+            *"Disable"*)
+                sudo systemctl disable "$timer"
+                yprint --color=green "Timer disabled!"
+                sleep 1
+                ;;
+            *"Back"*) break ;;
+        esac
+    done
+}
+
+displayMenu() {
+    while true; do
+        clear
+        yprint -c --color=yellow "$DISTRO_NAME $TITLE"
+        
+        # Get all timers
+        local timers=$(systemctl list-timers --all --no-pager --no-legend | awk '{print $NF}')
+        
+        height=$(($(tput lines) - 1))
+        choice=$(echo -e "$timers\n$EXIT_TEXT" | fzf \
+            --layout=reverse \
+            --prompt="Select timer > " \
+            --preview="systemctl status {} 2>/dev/null" \
+            --preview-window=right:120 \
+            --height=$height)
+        
+        [[ -z "$choice" || "$choice" == "$EXIT_TEXT" ]] && exit 0
+        
+        timerMenu "$choice"
+    done
+}
+
+OPEN_TERMINAL=false
+EXIT_TEXT="󰈆  Exit"
+
+while getopts "teh" opt; do
+    case $opt in
+        t) OPEN_TERMINAL=true ;;
+        e) EXIT_TEXT="󰌍  Back" ;;
+        h) showHelp; exit 0 ;;
+        \?) echo "Invalid option. Use -h for help."; exit 1 ;;
+    esac
+done
+
+if [[ "$OPEN_TERMINAL" == true ]]; then
+    openTerminal
+    exit 0
+fi
+
+displayMenu

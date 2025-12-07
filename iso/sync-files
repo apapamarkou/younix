@@ -47,6 +47,7 @@ sudo rsync -a --delete /etc/environment "$SCRIPT_DIR/airootfs/etc/"
 # sync gtk settings
 echo "Syncing to airootfs/etc/gtk-3.0: /etc/gtk-3.0"
 sudo rsync -a --delete /etc/gtk-3.0 "$SCRIPT_DIR/airootfs/etc/"
+sudo rm $SCRIPT_DIR/airootfs/etc/gtk-3.0/im-multipress.conf
 echo "Syncing to airootfs/etc/gtk-4.0: /etc/gtk-4.0"
 sudo rsync -a --delete /etc/gtk-4.0 "$SCRIPT_DIR/airootfs/etc/"
 

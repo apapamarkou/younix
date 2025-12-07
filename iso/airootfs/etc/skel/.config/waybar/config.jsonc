@@ -11,6 +11,7 @@
   "modules-center": [],
   "modules-right": [
     "custom/modes",
+    "custom/drives",
     "custom/weather",
     "custom/nightlight",
     "custom/updates",
@@ -66,6 +67,16 @@
   "hyprland/language": {
     "format": "{short}",
     "tooltip": false
+  },
+  "custom/drives": {
+    "module": "custom/script",
+    "return-type": "json",
+    "exec": "waybar-drives",
+    "interval": 30,
+    "format": "{text}",
+    "tooltip": true,
+    "on-click": "files /",
+    "on-click-right": "diskspace"
   },
   "network": {
     "format-wifi": " 󰤨    {essid} ",
@@ -139,13 +150,6 @@
     "on-click-right": "ysoftware -t",
     "tooltip": true,
     "tooltip-format": "\n    left click: update manager \n\n    right click: software manager \n"
-  },
-  "custom/clock": {
-    "return-type": "json",
-    "exec": "waybar-calendar",
-    "interval": 1,
-    "on-click": "waybar-calendar prev",
-    "on-click-right": "waybar-calendar next"
   },
   "custom/weather": {
     "exec": "yweather -m",
@@ -239,6 +243,13 @@
     "tooltip-format-enumerate-connected-battery": "{device_alias}\t{device_address}\t{device_battery_percentage}%",
     "on-click": "bluetoothwindow"
   },
+  "custom/clock": {
+    "return-type": "json",
+    "exec": "waybar-calendar",
+    "interval": 1,
+    "on-click": "waybar-calendar prev",
+    "on-click-right": "waybar-calendar next"
+  },
   "custom/power": {
     "format": "  ",
     "tooltip": false,
@@ -247,8 +258,7 @@
     "menu-actions": {
       "shutdown": "shutdown -h now",
       "reboot": "reboot",
-      "suspend": "systemctl suspend",
-      "hibernate": "systemctl hibernate",
+      "lock": "hyprlock",
       "logout": "hyprctl dispatch exit",
       "control": "ycc -t"
     }

@@ -175,16 +175,13 @@ partitionMenu() {
         local current_mount=$(lsblk -no MOUNTPOINT "$partition" 2>/dev/null)
         local mount_text="  Mount"
         local point_text="  Set mount point"
-        local automount_text="󱘖  Enable Automount"
         
         if [[ -n "$current_mount" ]]; then
             mount_text="  Unmount"
             point_text="  Change mount point"
         fi
         
-        
-        isAutomount "$partition" && automount_text="󱘖  Disable Automount"
-        choice=$(echo -e "$point_text\n$mount_text\n$automount_text\n󰌍  Back" | fzf \
+        choice=$(echo -e "$point_text\n$mount_text\n󰌍  Back" | fzf \
             --layout=reverse \
             --prompt=" Select > " \
             --height=50% \
@@ -196,7 +193,6 @@ partitionMenu() {
         case "$choice" in
             *"mount point"*) setMountPoint "$partition" ;;
             *"Mount"*|*"Unmount"*) mountPartition "$partition" ;;
-            *"Automount"*) toggleAutomount "$partition" ;;
             *"Back"*) break ;;
         esac
     done
@@ -204,14 +200,13 @@ partitionMenu() {
 
 displayMenu() {
     loadConfig
-    setupSystemdService
     
     while true; do
         clear
         yprint -c --color=yellow "$DISTRO_NAME $TITLE"
         
         # Get all partitions (excluding loop devices and system partitions)
-        local partitions=$(lsblk -rno NAME,TYPE,MOUNTPOINT | awk '$2=="part" && ($3=="" || $3 !~ /^\/(|home|boot|usr|var|tmp|opt|srv|root|etc)$/) {print "/dev/" $1}' | grep -vE '(loop|sr[0-9]|ram[0-9])' | sort)
+        local partitions=$(lsblk -rno NAME,TYPE | awk '$2=="part" {print "/dev/" $1}' | grep -vE '(loop|sr[0-9]|ram[0-9])' | sort)
         local options=$(echo -e "$partitions\n$EXIT_TEXT")
         
         height=$(($(tput lines) - 1))
@@ -243,9 +238,8 @@ fi
 OPEN_TERMINAL=false
 EXIT_TEXT="󰈆  Exit"
 
-while getopts "aeth" opt; do
+while getopts "eth" opt; do
     case $opt in
-        a) mountAutomountPartitions; exit 0 ;;
         e) EXIT_TEXT="󰌍  Back" ;;
         t) OPEN_TERMINAL=true ;;
         h) showHelp; exit 0 ;;
@@ -259,49 +253,3 @@ if [[ "$OPEN_TERMINAL" == true ]]; then
 fi
 
 displayMenu
-
-mountAutomountPartitions() {
-    loadConfig
-    [[ ! -f "$AUTOMOUNT_FILE" ]] && exit 0
-    
-    while read -r partition_name; do
-        [[ -z "$partition_name" ]] && continue
-        local partition="/dev/$partition_name"
-        [[ ! -b "$partition" ]] && continue
-        
-        local current_mount=$(lsblk -no MOUNTPOINT "$partition" 2>/dev/null)
-        [[ -n "$current_mount" ]] && continue
-        
-        local folder_name=$(getMountFolder "$partition")
-        [[ -z "$folder_name" ]] && continue
-        
-        local mount_path="$HOME/Drives/$folder_name"
-        mkdir -p "$mount_path"
-        sudo mount "$partition" "$mount_path" 2>/dev/null && sudo chown $USER:$USER "$mount_path"
-    done < "$AUTOMOUNT_FILE"
-}
-
-setupSystemdService() {
-    local service_dir="$HOME/.config/systemd/user"
-    local service_file="$service_dir/ymount.service"
-    
-    [[ -f "$service_file" ]] && return
-    
-    mkdir -p "$service_dir"
-    cat > "$service_file" << EOF
-[Unit]
-Description=YMount Automount Service
-After=local-fs.target
-
-[Service]
-Type=oneshot
-ExecStart=$HOME/.local/bin/ymount -a
-
-[Install]
-WantedBy=default.target
-EOF
-    
-    systemctl --user daemon-reload
-    systemctl --user enable ymount.service
-    systemctl --user start ymount.service
-}

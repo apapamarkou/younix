@@ -1,145 +1,176 @@
 #!/bin/bash
 
-# __   __    _   _ _   _ ___  __
-# \ \ / /__ | | | | \ | (_) \/ /
-#  \ V / _ \| | | |  \| | |\  / 
-#   | | (_) | |_| | |\  | |/  \ 
-#   |_|\___/ \___/|_| \_|_/_/\_\
-#
-# Lisence GPL3
-# Homepage: https://github.com/apapamarkou/younix
-# Author: Andrianos Papamarkou
-# Email: papamarkoua@gmail.com
-
-#
-# YoUNiX Configure Suspend
-#
-
+# Standard YoUNiX Control script template
 MUTE_NOTIFY=false
 MUTE_ECHO=false
 SCRIPT_NAME=$(basename "$0")
-TITLE="Configure Suspend"
-CONF="/etc/systemd/logind.conf"
-
-CURRENT_AUTOSUSPEND_TIME=$(systemd-inhibit --list | grep 'sleep.target' | awk '{print $5}')
-
+TITLE="Power Management"
+CONF="$HOME/.config/hypr/hypridle.conf"
 
 showHelp() {
     echo "$DISTRO_NAME $TITLE"
     echo "Usage: $SCRIPT_NAME [OPTIONS]"
-    echo "Current Autosuspend: $CURRENT_AUTOSUSPEND_TIME "
     echo "Options:"
-    echo "  -t           Open in terminal"
-    echo "  -s           Set autosuspend time"
-    echo "  -h           Show this help"
-    echo "  -n           Show notification"
-    echo "  -v           Show console message"
+    echo "  -t    Open in terminal"
+    echo "  -h    Show this help"
+    echo "Arguments can be combined: -vn, -nv, etc."
+    exit 0
 }
 
 openTerminal() {
-    local args=""
-    [ "$MUTE_NOTIFY" = true ] && args="$args -n"
-    [ "$MUTE_ECHO" = true ] && args="$args -v"
     nohup flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=50 --lines=15 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME $args > /dev/null 2>&1 &
 }
 
 printMessage() {
     if [ "$MUTE_NOTIFY" = false ]; then
-        notify-send "⚡ Auto-Suspend Changed" "Now: $1"
+        notify-send "$@"
     fi
     if [ "$MUTE_ECHO" = false ]; then
-        echo -e "⚡ Auto-Suspend Changed\nNow: $1"
+        echo -e "$@"
     fi
 }
 
-change() {
-    sudo cp "$CONF" "${CONF}.bak"
-
-    if [ "$1" = "never" ]; then
-        disable
-        printMessage "Never"
+get_current_values() {
+    if [ -f "$CONF" ]; then
+        lock_timeout=$(grep -A2 "# Listener 1" "$CONF" | grep "timeout" | grep -o '[0-9]*' | head -1)
+        screen_timeout=$(grep -A3 "# Listener 2" "$CONF" | grep "timeout" | grep -o '[0-9]*' | head -1)
+        suspend_timeout=$(grep -A3 "# Listener 3" "$CONF" | grep "timeout" | grep -o '[0-9]*' | head -1)
+        
+        [ -n "$lock_timeout" ] && lock_mins=$((lock_timeout / 60)) || lock_mins=5
+        [ -n "$screen_timeout" ] && screen_mins=$((screen_timeout / 60)) || screen_mins=6
+        [ -n "$suspend_timeout" ] && suspend_mins=$((suspend_timeout / 60)) || suspend_mins=10
     else
-        set "$1"
-        printMessage "$1"
-    fi
-    systemctl restart systemd-logind
-    echo "Done. You can test by running: sudo loginctl idle-time"
-
-}
-
-set() {
-    # Ensure lines exist or replace them
-    if grep -q "^#*IdleAction=" "$CONF"; then
-        sudo sed -i 's/^#*IdleAction=.*/IdleAction=suspend/' "$CONF"
-    else
-        sudo echo "IdleAction=suspend" >> "$CONF"
-    fi
-
-    if grep -q "^#*IdleActionSec=" "$CONF"; then
-        sudo sed -i 's/^#*IdleActionSec=.*/IdleActionSec=20min/' "$CONF"
-    else
-        sudo echo "IdleActionSec=$1" >> "$CONF"
+        lock_mins=5
+        screen_mins=6
+        suspend_mins=10
     fi
 }
 
-disable(){
-    # Comment out or reset the lines
-    if grep -q "^IdleAction=" "$CONF"; then
-        sudo sed -i 's/^IdleAction=.*/#IdleAction=ignore/' "$CONF"
-    else
-        sudo echo "#IdleAction=ignore" >> "$CONF"
-    fi
+enable_now() {
+    pkill hypridle 2>/dev/null;
+    hyprctl dispatch exec "hypridle" 2>/dev/null
+}
 
-    if grep -q "^IdleActionSec=" "$CONF"; then
-        sudo sed -i 's/^IdleActionSec=.*/#IdleActionSec=30min/' "$CONF"
-    else
-        sudo echo "#IdleActionSec=30min" >> "$CONF"
-    fi
+update_lock_timeout() {
+    local mins="$1"
+    local timeout=$((mins == "never" ? 999999 : mins * 60))
+    sed -i '/# Listener 1/,/^}/ s/^[[:space:]]*timeout = [0-9]*/    timeout = '$timeout'/' "$CONF"
+    enable_now 
+}
+
+update_screen_timeout() {
+    local mins="$1"
+    local timeout=$((mins == "never" ? 999999 : mins * 60))
+    sed -i '/# Listener 2/,/^}/ s/^[[:space:]]*timeout = [0-9]*/    timeout = '$timeout'/' "$CONF"
+    enable_now 
+}
+
+update_suspend_timeout() {
+    local mins="$1"
+    local timeout=$((mins == "never" ? 999999 : mins * 60))
+    sed -i '/# Listener 3/,/^}/ s/^[[:space:]]*timeout = [0-9]*/    timeout = '$timeout'/' "$CONF"
+    enable_now 
+}
+
+show_lock_menu() {
+    while true; do
+        clear
+        yprint -c --color=yellow "$DISTRO_NAME Lock Screen Timeout"
+        height=$(($(tput lines) - 1))
+        choice=$(echo -e "   2 mins\n   5 mins\n   10 mins\n   30 mins\n   Never\n󰌍  Back" | fzf \
+                --ansi \
+                --layout=reverse \
+                --prompt="  > " \
+                --height=$height)
+        case "$choice" in
+            *"2 mins"*) update_lock_timeout 2; return ;;
+            *"5 mins"*) update_lock_timeout 5; return ;;
+            *"10 mins"*) update_lock_timeout 10; return ;;
+            *"30 mins"*) update_lock_timeout 30; return ;;
+            *"Never"*) update_lock_timeout never; return ;;
+            *) return ;;
+        esac
+    done
+}
+
+show_screen_menu() {
+    while true; do
+        clear
+        yprint -c --color=yellow "$DISTRO_NAME Screen Off Timeout"
+        height=$(($(tput lines) - 1))
+        choice=$(echo -e "   5 mins\n   7 mins\n   17 mins\n   35 mins\n   Never\n󰌍  Back" | fzf \
+                --ansi \
+                --layout=reverse \
+                --prompt="  > " \
+                --height=$height)
+        case "$choice" in
+            *"5 mins"*) update_screen_timeout 5; return ;;
+            *"7 mins"*) update_screen_timeout 7; return ;;
+            *"17 mins"*) update_screen_timeout 17; return ;;
+            *"35 mins"*) update_screen_timeout 35; return ;;
+            *"Never"*) update_screen_timeout never; return ;;
+            *) return ;;
+        esac
+    done
+}
+
+show_suspend_menu() {
+    while true; do
+        clear
+        yprint -c --color=yellow "$DISTRO_NAME Suspend Timeout"
+        height=$(($(tput lines) - 1))
+        choice=$(echo -e "   7 mins\n   10 mins\n   20 mins\n   40 mins\n   Never\n󰌍  Back" | fzf \
+                --ansi \
+                --layout=reverse \
+                --prompt="  > " \
+                --height=$height)
+        case "$choice" in
+            *"7 mins"*) update_suspend_timeout 7; return ;;
+            *"10 mins"*) update_suspend_timeout 10; return ;;
+            *"20 mins"*) update_suspend_timeout 20; return ;;
+            *"40 mins"*) update_suspend_timeout 40; return ;;
+            *"Never"*) update_suspend_timeout never; return ;;
+            *) return ;;
+        esac
+    done
 }
 
 displayMenu() {
     while true; do
+        clear
         yprint -c --color=yellow "$DISTRO_NAME $TITLE"
-        CURRENT_AUTOSUSPEND_TIME=$(systemd-inhibit --list | grep 'sleep.target' | awk '{print $5}')
-
-        yprint -c --color=yellow "Auto-Suspend: $CURRENT_AUTOSUSPEND_TIME"
-        height=$(($(tput lines) - 2))
-        choice=$(echo -e "󰹆  Never\n  5 min\n  15 min\n  30 min\n$EXIT_TEXT" | fzf --layout=reverse --prompt=" Auto-Suspend > " --height=$height)
-        [ -z "$choice" ] && exit 0
+        get_current_values
         
+        lock_text="Lock Screen After ${lock_mins} mins"
+        screen_text="Turn off screen ${screen_mins} mins"
+        suspend_text="Suspend system after ${suspend_mins} mins"
+        
+        height=$(($(tput lines) - 1))
+        choice=$(echo -e "  $lock_text\n󰍹  $screen_text\n󰒲  $suspend_text\n$EXIT_TEXT" | fzf \
+                --ansi \
+                --layout=reverse \
+                --prompt="  > " \
+                --height=$height)
         case "$choice" in
-            *Never*) change never ;;
-            *5*) change 5min ;;
-            *15*) change 15min ;;
-            *30*) change 30min ;;
-            *) break ;;
+                *"Lock Screen"*) show_lock_menu ;;
+                *"Turn off"*) show_screen_menu ;;
+                *"Suspend"*) show_suspend_menu ;;
+                *) exit 0 ;;
         esac
     done
 }
 
 OPEN_TERMINAL=false
-SET=""
 EXIT_TEXT="󰈆  Exit"
 
-while getopts "ethnvs:" opt; do
+while getopts "the" opt; do
     case $opt in
         e) EXIT_TEXT="󰌍  Back" ;;
         t) OPEN_TERMINAL=true ;;
-        h) showHelp; exit 0 ;;
-        n) MUTE_NOTIFY=true ;;
-        v) MUTE_ECHO=true ;;
-        s) SET="$OPTARG" ;;
+        h) showHelp ;;
         \?) echo "Invalid option. Use -h for help."; exit 1 ;;
     esac
 done
-
-if [ -n "$SET" ]; then
-    case "$SET" in
-        never|5min|15min|30min) change "$SET" ;;
-        *) echo "Invalid suspend time. Use 'never', '5min', '15min', or '30min'."; exit 1 ;;
-    esac
-    exit 0
-fi
 
 if [ "$OPEN_TERMINAL" = true ]; then
     openTerminal
