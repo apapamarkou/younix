@@ -3,29 +3,21 @@
   <object class="GtkMenu" id="menu">
     <child>
         <object class="GtkMenuItem" id="control">
-        	<property name="label">Control Panel</property>
+        	<property name="label">Control Center</property>
         </object>
 	</child>
     <child>
     	<object class="GtkSeparatorMenuItem" id="delimiter1"/>
     </child>
 	<child>
-		<object class="GtkMenuItem" id="suspend">
-			<property name="label">Suspend</property>
-        </object>
-	</child>
-	<child>
-        <object class="GtkMenuItem" id="hibernat">
-			<property name="label">Hibernate</property>
+		<object class="GtkMenuItem" id="lock">
+			<property name="label">Lock Screen</property>
         </object>
 	</child>
     <child>
         <object class="GtkMenuItem" id="shutdown">
 			<property name="label">Shutdown</property>
         </object>
-    </child>
-    <child>
-    	<object class="GtkSeparatorMenuItem" id="delimiter2"/>
     </child>
     <child>
 		<object class="GtkMenuItem" id="reboot">

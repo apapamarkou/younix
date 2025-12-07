@@ -18,7 +18,7 @@ showHelp() {
 }
 
 openTerminal() {
-    nohup flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=80 --lines=25 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME $args > /dev/null 2>&1 &
+    nohup flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=90 --lines=24 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME $args > /dev/null 2>&1 &
 }
 
 printMessage() {
@@ -288,22 +288,21 @@ displayMenu() {
         menu_items=$(cat << EOF
 Basic Calculator|Perform + - * / % calculations. Use 'ans' for last result.
 Scientific Calculator|sin, cos, tan, log, sqrt. Use 'ans' for last result.
-Unit Converter|Convert between units and currencies. Opens sub-menu.
+Unit Converter|Convert between units and currencies.
 Quiz Mode|Solve random math problems and track your score.
 Exit|Quit the calculator.
 EOF
 )
-        
+        yprint -c --color=yellow "$DISTRO_NAME Calculator"
         height=$(($(tput lines) - 1))
         choice=$(echo "$menu_items" | fzf \
             --delimiter='|' \
             --with-nth=1 \
             --preview='echo {2}' \
-            --preview-window=right:50%:wrap \
-            --prompt="YoUNiX Calculator > " \
+            --preview-window=right:60:wrap \
+            --prompt=" > " \
             --height=$height \
-            --layout=reverse \
-            --header="$DISTRO_NAME Calculator - Select mode (use arrow keys)")
+            --layout=reverse )
         
         [ -z "$choice" ] && exit 0
         
