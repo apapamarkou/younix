@@ -36,4 +36,4 @@ systemctl disable systemd-networkd.service
 systemctl disable systemd-resolved.service
 systemctl enable NetworkManager
 systemctl enable NetworkManager-wait-online.service
-
+systemctl enable bluetoothservice
