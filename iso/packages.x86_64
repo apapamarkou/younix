@@ -14,6 +14,7 @@ bluetui
 bluez
 bluez-utils
 bolt
+brightnessctl
 brltty
 broadcom-wl
 btop
@@ -202,6 +203,7 @@ wireless-regdb
 wireless_tools
 wireplumber
 wl-clipboard
+wlsunset
 wofi
 wpa_supplicant
 wvdial

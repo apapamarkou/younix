@@ -6,21 +6,20 @@
 #   | | (_) | |_| | |\  | |/  \ 
 #   |_|\___/ \___/|_| \_|_/_/\_\
 #
-# Lisence GPL3
+# License GPL3
 # Homepage: https://github.com/apapamarkou/younix
 # Author: Andrianos Papamarkou
 # Email: papamarkoua@gmail.com
 
 #
-# YoUNiX Configure Night Light
+# YoUNiX Nightlight
 #
 
 SCRIPT_NAME=$(basename "$0")
 TITLE="Nightlight"
-
-CONFIG="$HOME/.config/hypr/hyprsunset.conf"
-HYPR_CONFIG="$HOME/.config/hypr/autostart.conf"
-LINE_TO_TOGGLE="exec-once = hyprsunset"
+CONFIG_DIR="$HOME/.config/nightlight"
+CONFIG_FILE="$CONFIG_DIR/location.conf"
+SERVICE_FILE="$HOME/.config/systemd/user/nightlight.service"
 
 showHelp() {
     echo "$DISTRO_NAME $TITLE"
@@ -28,144 +27,150 @@ showHelp() {
     echo "Options:"
     echo "  -t    Open in terminal"
     echo "  -m    Output on/off status (for Waybar)"
-    echo "  -s    Output start/end time (for Waybar tooltip)"
     echo "  -h    Show this help"
-    exit 0
 }
 
 openTerminal() {
-    echo "1111"
-    nohup flock -n ~/.config/ylock/$SCRIPT_NAME.lock terminal --columns=50 --lines=15 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME $args > /dev/null 2>&1
+    nohup flock -n ~/.config/lock terminal --columns=50 --lines=10 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME > /dev/null 2>&1 &
 }
 
-printMessage() {
-    if [ "$MUTE_NOTIFY" = false ]; then
-        notify-send "$@"
+getLocation() {
+    local force_update=${1:-false}
+    
+    if [[ "$force_update" == "false" && -f "$CONFIG_FILE" ]]; then
+        source "$CONFIG_FILE"
+        [[ -n "$LATITUDE" && -n "$LONGITUDE" ]] && return 0
     fi
-    if [ "$MUTE_ECHO" = false ]; then
-        echo -e "$@"
+    
+    local lat=$(curl -s "https://ipapi.co/latitude/" 2>/dev/null)
+    local lon=$(curl -s "https://ipapi.co/longitude/" 2>/dev/null)
+    
+    if [[ -n "$lat" && -n "$lon" ]]; then
+        mkdir -p "$CONFIG_DIR"
+        echo "LATITUDE=$lat" > "$CONFIG_FILE"
+        echo "LONGITUDE=$lon" >> "$CONFIG_FILE"
+        LATITUDE=$lat
+        LONGITUDE=$lon
+        return 0
     fi
-}
-
-# --- Helpers for hyprsunset profile blocks ---
-
-# Read start/end times from profile blocks
-get_profile_times() {
-    start_time=$(awk '/profile/{p++} p==1 && /time/ {print $3; exit}' "$CONFIG")
-    end_time=$(awk '/profile/{p++} p==2 && /time/ {print $3; exit}' "$CONFIG")
-}
-
-# Update time in start/end profile
-update_profile_time() {
-    local which=$1
-    local new_time=$2
-    if [ "$which" = "start" ]; then
-        awk -v new="$new_time" '
-        /profile/{p++}
-        p==1 && /time/ {$3=new}
-        {print}
-        ' "$CONFIG" > "${CONFIG}.tmp" && mv "${CONFIG}.tmp" "$CONFIG"
-    else
-        awk -v new="$new_time" '
-        /profile/{p++}
-        p==2 && /time/ {$3=new}
-        {print}
-        ' "$CONFIG" > "${CONFIG}.tmp" && mv "${CONFIG}.tmp" "$CONFIG"
+    
+    read -p "Enter latitude: " lat
+    read -p "Enter longitude: " lon
+    
+    if [[ -n "$lat" && -n "$lon" ]]; then
+        mkdir -p "$CONFIG_DIR"
+        echo "LATITUDE=$lat" > "$CONFIG_FILE"
+        echo "LONGITUDE=$lon" >> "$CONFIG_FILE"
+        LATITUDE=$lat
+        LONGITUDE=$lon
+        return 0
     fi
+    
+    return 1
 }
 
-is_running() {
-    pgrep -x hyprsunset >/dev/null
+isEnabled() {
+    systemctl --user is-enabled nightlight.service &>/dev/null
 }
 
-select_time() {
-    local which=$1
-    get_profile_times
-    local current=$( [ "$which" = "start" ] && echo "$start_time" || echo "$end_time" )
-    local hours=$(seq -w 0 23)
-    local hour=$(printf "%s\n" "${hours[@]}" | fzf --prompt="Select $which time [$current]> " --select-1 --exit-0)
-    if [ -n "$hour" ]; then
-        # Optional: allow minutes
-        read -p "Minutes (00-59, default 00): " mins
-        mins=${mins:-00}
-        update_profile_time "$which" "$hour:$mins"
-    fi
+enableNightlight() {
+    getLocation || { yprint --color=red "Failed to get location"; return 1; }
+    
+    mkdir -p "$(dirname "$SERVICE_FILE")"
+    cat > "$SERVICE_FILE" << EOF
+[Unit]
+Description=Nightlight (wlsunset)
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/wlsunset -l $LATITUDE -L $LONGITUDE
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target
+EOF
+    
+    systemctl --user daemon-reload
+    systemctl --user enable --now nightlight.service
+    yprint --color=green "Nightlight enabled"
+}
+
+disableNightlight() {
+    systemctl --user disable --now nightlight.service 2>/dev/null
+    rm -f "$SERVICE_FILE"
+    systemctl --user daemon-reload
+    yprint --color=yellow "Nightlight disabled"
 }
 
 displayMenu() {
-    clear
-    yprint -c --color=yellow "$DISTRO_NAME $TITLE"
-    height=$(($(tput lines) - 2))
-    get_profile_times
-    local running=$(is_running && echo "  Disable nightlight" || echo "  Enable nightlight")
-    local condition=$(is_running && echo "Nightlight is enabled" || echo "Nightlight is disabled")
-    yprint -c --color=green "$condition"
-
-    local choice=$(printf "%s\n󰅕  Start Time: %s\n󰨿  End Time: %s\n$EXIT_TEXT\n" "$running" "$start_time" "$end_time" | 
-    fzf --layout=reverse --prompt="  > " --height=$height )
-
-    case "$choice" in
-        *"Enable nightlight"*)
-            systemctl --user enable --now hyprsunset > /dev/null 2>&1
-            sed -i "s/^#*[[:space:]]*$(echo "$LINE_TO_TOGGLE" | sed 's/[\/&]/\\&/g')/$LINE_TO_TOGGLE/" "$HYPR_CONFIG"
-            ;;
-        *"Disable nightlight"*)
-            systemctl --user disable --now hyprsunset > /dev/null 2>&1
-            sed -i "/^[^#]*$(echo "$LINE_TO_TOGGLE" | sed 's/[\/&]/\\&/g')/s/^/#/" "$HYPR_CONFIG"
-            ;;
-        *"Start Time:"*)
-            select_time "start"
-            ;;
-        *"End Time:"*)
-            select_time "end"
-            ;;
-        *)
-            systemctl --user restart --now hyprsunset > /dev/null 2>&1
-            exit 0
-            ;;
-    esac
-
-    displayMenu
+    while true; do
+        clear
+        yprint -c --color=yellow "$DISTRO_NAME $TITLE"
+        
+        local status_text="Nightlight is disabled"
+        local action_text="  Enable nightlight"
+        
+        if isEnabled; then
+            status_text="Nightlight is enabled"
+            action_text="  Disable nightlight"
+        fi
+        
+        yprint -c --color=green "$status_text"
+        [[ -n "$LATITUDE" && -n "$LONGITUDE" ]] && yprint -c "Lat: $LATITUDE, Lon: $LONGITUDE"
+        
+        height=$(($(tput lines) - 3))
+        choice=$(echo -e "$action_text\n  Update location\n$EXIT_TEXT" | fzf \
+            --layout=reverse \
+            --prompt="  > " \
+            --height=$height)
+        
+        [[ -z "$choice" ]] && exit 0
+        
+        case "$choice" in
+            *"Enable"*)
+                enableNightlight
+                read -p "Press Enter to continue..."
+                ;;
+            *"Disable"*)
+                disableNightlight
+                read -p "Press Enter to continue..."
+                ;;
+            *"Update location"*)
+                getLocation true
+                isEnabled && enableNightlight
+                read -p "Press Enter to continue..."
+                ;;
+            *"$EXIT_TEXT"*)
+                exit 0
+                ;;
+        esac
+    done
 }
 
-# --- Standard YoUNiX argument parsing ---
 OPEN_TERMINAL=false
 WAYBAR_STATUS=false
-WAYBAR_TOOLTIP=false
 EXIT_TEXT="󰈆  Exit"
 
-while getopts "ethmsv" opt; do
+while getopts "etmh" opt; do
     case $opt in
         e) EXIT_TEXT="󰌍  Back" ;;
         t) OPEN_TERMINAL=true ;;
         m) WAYBAR_STATUS=true ;;
-        s) WAYBAR_TOOLTIP=true ;;
-        h) showHelp ;;
+        h) showHelp; exit 0 ;;
         \?) echo "Invalid option. Use -h for help."; exit 1 ;;
     esac
 done
 
-# --- Waybar output ---
-if [ "$WAYBAR_STATUS" = true ]; then
-    if is_running; then
-        echo "󰛨"
-    else
-        echo "󰹏"
-    fi
+if [[ "$WAYBAR_STATUS" == true ]]; then
+    isEnabled && echo "󰛨" || echo "󰹏"
     exit 0
 fi
 
-if [ "$WAYBAR_TOOLTIP" = true ]; then
-    get_profile_times
-    echo -e "\nStart time: $start_time\nEnd time: $end_time\n"
-    exit 0
-fi
-
-# --- Terminal mode ---
-if [ "$OPEN_TERMINAL" = true ]; then
+if [[ "$OPEN_TERMINAL" == true ]]; then
     openTerminal
     exit 0
 fi
 
-# --- Default: interactive menu ---
+getLocation
 displayMenu

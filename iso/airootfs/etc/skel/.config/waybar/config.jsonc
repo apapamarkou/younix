@@ -81,7 +81,7 @@
   "network": {
     "format-wifi": " 󰤨    {essid} ",
     "format-ethernet": "    Wired ",
-    "tooltip-format": "\n    left click: toggle wired/wireless view \n\n    right click: network manager \n",
+    "tooltip-format": "\n    left click: toggle view connection name/signal strength view \n\n    right click: network manager \n",
     "format-linked": " 󱘖    {ifname} (No IP) ",
     "format-disconnected": "     Disconnected ",
     "format-alt": " 󰤨  {signalStrength}% ",
