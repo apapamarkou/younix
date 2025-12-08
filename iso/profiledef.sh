@@ -10,9 +10,6 @@ install_dir="younix"
 buildmodes=('iso')
 bootmodes=('bios.syslinux'
            'uefi.systemd-boot')
-# bootmodes=('bios.syslinux' 'uefi.grub')
-
-
 
 grub_cfg="grub/grub.cfg"
 pacman_conf="pacman.conf"
