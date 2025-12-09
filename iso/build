@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+
+# always check timesyncd.enable=false
+# rm iso/airootfs/etc/systemd/system/sysinit.target.wants/systemd-timesyncd.service
+# rm iso/airootfs/etc/systemd/system/sysinit.target.wants/systemd-time-wait-sync.service
+# rm iso/airootfs/etc/systemd/system/network-online.target.wants/systemd-networkd-wait-online.service
+
 set -e
 
 sudo umount -l work/x86_64/airootfs/proc &
