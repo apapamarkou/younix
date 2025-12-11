@@ -41,7 +41,9 @@ SNAP_UPDATES=0
 
 #Check is there are any repo updates and show the number of packages
 checkRepos() {
-    REPO_UPDATES=$(pacman -Sup --noconfirm 2>/dev/null | grep -c "\.pkg\.tar")
+    # REPO_UPDATES=$(pacman -Sup --noconfirm 2>/dev/null | grep -c "\.pkg\.tar")
+    # REPO_UPDATES=$(pacman -Sup 2>/dev/null | awk 'NF' | grep -v ':: Starting full system upgrade' | grep -v ' nothing to do' | wc -l)
+    REPO_UPDATES=$(pacman -Qu 2>/dev/null | wc -l)
     # if count is 0 then yprint --green "No updates available in repos"
     if [ $REPO_UPDATES -eq 0 ]; then
         echo "No updates available $REPO_UPDATES"

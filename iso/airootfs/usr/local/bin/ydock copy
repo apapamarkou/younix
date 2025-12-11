@@ -1,0 +1,568 @@
+#!/usr/bin/env python3
+import gi
+import cairo
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("GtkLayerShell", "0.1")
+
+from gi.repository import Gtk, Gdk, GtkLayerShell, Gio, GLib
+import subprocess
+import json
+import os
+from pathlib import Path
+
+CONFIG_FILE = Path.home() / ".config" / "ydock" / "config.json"
+
+
+class DockIcon(Gtk.Button):
+    def __init__(self, desktop_file, is_running, dock):
+        super().__init__()
+        self.desktop_file = desktop_file
+        self.is_running = is_running
+        self.dock = dock
+        self.app_info = self.get_app_info()
+        
+        self.set_relief(Gtk.ReliefStyle.NONE)
+        self.set_focus_on_click(False)
+        self.set_tooltip_text(self.app_info['name'])
+        
+        if self.app_info['icon']:
+            try:
+                image = Gtk.Image.new_from_icon_name(self.app_info['icon'], Gtk.IconSize.DIALOG)
+            except:
+                image = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.DIALOG)
+        else:
+            image = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.DIALOG)
+            
+        if is_running:
+            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+            box.pack_start(image, False, False, 0)
+
+            dot = Gtk.DrawingArea()
+            dot.set_size_request(4, 4)
+            dot.set_halign(Gtk.Align.CENTER)
+
+            import cairo
+            def draw_dot(widget, cr):
+                cr.set_source_rgba(0.3, 0.7, 1.0, 0.9)
+                cr.arc(4, 4, 4, 0, 2 * 3.1416)
+                cr.fill()
+                return False
+
+            dot.connect("draw", draw_dot)
+            box.pack_start(dot, False, False, 0)
+
+            box.show_all()
+            self.add(box)
+        else:
+            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+            box.pack_start(image, False, False, 0)
+
+            spacer = Gtk.Box()
+            spacer.set_size_request(1, 8)  # same height as your dot + spacing
+            box.pack_start(spacer, False, False, 0)
+
+            box.show_all()
+            self.add(box)
+
+
+            
+        self.connect("clicked", self.on_left_click)
+        self.connect("button-press-event", self.on_button_press)
+
+        
+        # Enable drag and drop only for pinned apps
+        if self.desktop_file in dock.config['pinned_apps']:
+            self.drag_source_set(Gdk.ModifierType.BUTTON1_MASK, [], Gdk.DragAction.MOVE)
+            self.drag_source_add_text_targets()
+            self.connect("drag-begin", self.on_drag_begin)
+            self.connect("drag-data-get", self.on_drag_data_get)
+            self.connect("drag-end", self.on_drag_end)
+        
+    def get_app_info(self):
+        desktop_dirs = [
+            Path("/usr/share/applications"),
+            Path.home() / ".local/share/applications"
+        ]
+        
+        for d in desktop_dirs:
+            desktop_path = d / self.desktop_file
+            if desktop_path.exists():
+                try:
+                    content = desktop_path.read_text()
+                    icon = name = exec_cmd = ""
+                    actions = []
+                    
+                    # Get locale
+                    locale = os.environ.get('LANG', 'en').split('.')[0]
+                    
+                    lines = content.split('\n')
+                    in_desktop_entry = False
+                    
+                    # Parse [Desktop Entry] section only
+                    for line in lines:
+                        if line.strip() == '[Desktop Entry]':
+                            in_desktop_entry = True
+                            continue
+                        elif line.startswith('[') and in_desktop_entry:
+                            in_desktop_entry = False
+                            break
+                        elif in_desktop_entry:
+                            if line.startswith('Icon='):
+                                icon = line.split('=', 1)[1].strip()
+                            elif line.startswith('Name=') and not line.startswith('Name['):
+                                name = line.split('=', 1)[1].strip()
+                            elif line.startswith('Exec='):
+                                exec_cmd = line.split('=', 1)[1].strip()
+                            elif line.startswith('Actions='):
+                                action_ids = line.split('=', 1)[1].strip().split(';')
+                                actions = [aid for aid in action_ids if aid]
+                    
+                    # Parse actions from their respective sections
+                    desktop_actions = []
+                    for action_id in actions:
+                        action_name = action_id
+                        action_exec = ""
+                        in_action_section = False
+                        
+                        for line in lines:
+                            if line.strip() == f'[Desktop Action {action_id}]':
+                                in_action_section = True
+                                continue
+                            elif line.startswith('[') and in_action_section:
+                                in_action_section = False
+                                break
+                            elif in_action_section:
+                                if line.startswith(f'Name[{locale}]='):
+                                    action_name = line.split('=', 1)[1].strip()
+                                elif line.startswith('Name=') and action_name == action_id:
+                                    action_name = line.split('=', 1)[1].strip()
+                                elif line.startswith('Exec='):
+                                    action_exec = line.split('=', 1)[1].strip()
+                        
+                        if action_exec:
+                            desktop_actions.append({'name': action_name, 'exec': action_exec})
+                    
+                    return {'icon': icon, 'name': name, 'exec': exec_cmd, 'actions': desktop_actions}
+                except:
+                    pass
+        return {'icon': '', 'name': self.desktop_file, 'exec': '', 'actions': []}
+        
+    def on_left_click(self, button):
+        if self.is_running:
+            windows = self.get_app_windows()
+            if len(windows) == 1:
+                # Single window - focus it
+                window = windows[0]
+                if window['workspace'] == 99:  # Hidden
+                    self.unhide_window(window['address'])
+                else:
+                    self.focus_window(window['address'])
+            elif len(windows) > 1:
+                # Multiple windows - show context menu
+                class FakeEvent:
+                    def __init__(self):
+                        self.button = 1
+                        self.time = Gtk.get_current_event_time()
+                self.show_context_menu(FakeEvent())
+        else:
+            self.launch_app()
+            
+    def on_button_press(self, widget, event):
+        if event.button == 3:  # Right click
+            self.show_context_menu(event)
+            return True
+        return False
+            
+    def launch_app(self):
+        if self.app_info['exec']:
+            # Remove desktop entry field codes
+            exec_cmd = self.app_info['exec']
+            for code in ['%U', '%F', '%u', '%f', '%i', '%c', '%k']:
+                exec_cmd = exec_cmd.replace(code, '')
+            subprocess.Popen(exec_cmd.split())
+        
+    def get_app_windows(self):
+        try:
+            result = subprocess.run(['hyprctl', 'clients', '-j'], capture_output=True, text=True)
+            clients = json.loads(result.stdout)
+            
+            app_class = self.desktop_file.replace('.desktop', '')
+            windows = []
+            for client in clients:
+                if 'class' in client and client['class'] and (
+                    client['class'].lower() == app_class.lower() or
+                    app_class.lower() in client['class'].lower()
+                ):
+                    windows.append({
+                        'title': client.get('title', 'Untitled'),
+                        'address': client.get('address', ''),
+                        'workspace': client.get('workspace', {}).get('id', 1),
+                        'hidden': client.get('hidden', False)
+                    })
+            return windows
+        except:
+            return []
+    
+    def focus_window(self, address):
+        subprocess.run(['hyprctl', 'dispatch', 'focuswindow', f'address:{address}'])
+    
+    def move_window_to_workspace(self, address, workspace):
+        subprocess.run(['hyprctl', 'dispatch', 'movetoworkspacesilent', f'{workspace},address:{address}'])
+    
+    def get_current_workspace(self):
+        try:
+            result = subprocess.run(['hyprctl', 'activeworkspace', '-j'], capture_output=True, text=True)
+            workspace = json.loads(result.stdout)
+            return workspace.get('id', 1)
+        except:
+            return 1
+    
+    def hide_window(self, address):
+        subprocess.run(['hyprctl', 'dispatch', 'movetoworkspacesilent', f'99,address:{address}'])
+    
+    def unhide_window(self, address):
+        current_ws = self.get_current_workspace()
+        subprocess.run(['hyprctl', 'dispatch', 'movetoworkspace', f'{current_ws},address:{address}'])
+    
+    def close_window(self, address):
+        subprocess.run(['hyprctl', 'dispatch', 'closewindow', f'address:{address}'])
+    
+    def show_context_menu(self, event):
+        menu = Gtk.Menu()
+        menu.attach_to_widget(self.dock, None)
+        
+        # Show windows first
+        if self.is_running:
+            windows = self.get_app_windows()
+            if windows:
+                for window in windows:
+                    is_hidden = window['workspace'] == 99
+                    window_item = Gtk.MenuItem(label=window['title'][:30] + ('...' if len(window['title']) > 30 else ''))
+                    
+                    if not is_hidden:
+                        window_item.connect("activate", lambda w, addr=window['address']: self.focus_window(addr))
+                    else:
+                        window_item.connect("activate", lambda w, addr=window['address']: self.unhide_window(addr))
+                    
+                    menu.append(window_item)
+                
+                menu.append(Gtk.SeparatorMenuItem())
+        
+        # Actions from desktop file
+        for action in self.app_info['actions']:
+            action_item = Gtk.MenuItem(label=action['name'])
+            action_item.connect("activate", lambda w, cmd=action['exec']: self.launch_action(cmd))
+            menu.append(action_item)
+        
+        if self.app_info['actions']:
+            menu.append(Gtk.SeparatorMenuItem())
+        
+        # Close action for running apps
+        if self.is_running:
+            close_item = Gtk.MenuItem(label="Close")
+            close_item.connect("activate", self.on_close_app)
+            menu.append(close_item)
+            menu.append(Gtk.SeparatorMenuItem())
+        
+        # Pin/Unpin option
+        is_pinned = self.desktop_file in self.dock.config['pinned_apps']
+        pin_item = Gtk.MenuItem(label="Unpin" if is_pinned else "Pin")
+        if is_pinned:
+            pin_item.connect("activate", lambda w: self.dock.unpin_app(self.desktop_file))
+        else:
+            pin_item.connect("activate", lambda w: self.dock.pin_app(self.desktop_file))
+        menu.append(pin_item)
+        
+        menu.show_all()
+        menu.popup(None, None, None, None, event.button, event.time)
+    
+    def launch_action(self, exec_cmd):
+        # Remove desktop entry field codes
+        for code in ['%U', '%F', '%u', '%f', '%i', '%c', '%k']:
+            exec_cmd = exec_cmd.replace(code, '')
+        subprocess.Popen(exec_cmd.split())
+    
+    def on_close_app(self, menu_item):
+        windows = self.get_app_windows()
+        for window in windows:
+            self.close_window(window['address'])
+    
+    def on_drag_begin(self, widget, context):
+        self.dock.drag_source = self
+        # Set drag icon
+        if self.app_info['icon']:
+            try:
+                icon_theme = Gtk.IconTheme.get_default()
+                pixbuf = icon_theme.load_icon(self.app_info['icon'], 48, 0)
+                Gtk.drag_set_icon_pixbuf(context, pixbuf, 24, 24)
+            except:
+                pass
+    
+    def on_drag_data_get(self, widget, context, data, info, time):
+        data.set_text(self.desktop_file, -1)
+    
+    def on_drag_end(self, widget, context):
+        dock = self.dock
+        drag_source = dock.drag_source
+
+        if not drag_source:
+            return
+
+        # Πάρε την τρέχουσα θέση του pointer στην οθόνη
+        display = Gdk.Display.get_default()
+        screen, x_root, y_root, mask = Gdk.get_default_root_window().get_pointer()
+
+        # Συντεταγμένες dock
+        alloc = dock.inner.get_allocation()
+        win_x, win_y = dock.get_position()  # θέση του window στην οθόνη
+
+        # Μετατροπή allocation σε συντεταγμένες οθόνης
+        dock_x1 = win_x + alloc.x
+        dock_y1 = win_y + alloc.y
+        dock_x2 = dock_x1 + alloc.width
+        dock_y2 = dock_y1 + alloc.height
+
+        # Έλεγχος αν ο δείκτης είναι εκτός dock
+        if not (dock_x1 <= x_root <= dock_x2 and dock_y1 <= y_root <= dock_y2):
+            dock.unpin_app(drag_source.desktop_file)
+
+        dock.drag_source = None
+
+
+
+
+class DockWindow(Gtk.Window):
+    def __init__(self):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        self.config = self.load_config()
+        self.drag_source = None
+        
+        GtkLayerShell.init_for_window(self)
+        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
+        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
+        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, False)
+        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, False)
+        GtkLayerShell.set_exclusive_zone(self, 80)
+        
+        self.set_app_paintable(True)
+        visual = self.get_screen().get_rgba_visual()
+        if visual and self.get_screen().is_composited():
+            self.set_visual(visual)
+            
+        self.set_name("ydock")
+        
+        self.inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        self.inner.set_name("dock-inner")
+        self.inner.set_margin_top(5)
+        self.inner.set_margin_bottom(0)
+        self.inner.set_margin_start(15)
+        self.inner.set_margin_end(15)
+        
+        # Enable drop on the box
+        self.inner.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.MOVE)
+        self.inner.drag_dest_add_text_targets()
+        self.inner.connect("drag-motion", self.on_drag_motion)
+        self.inner.connect("drag-data-received", self.on_drag_data_received)
+        
+        self.add(self.inner)
+        
+        self.update_dock()
+        GLib.timeout_add_seconds(2, self.update_dock)
+        self.show_all()
+        
+    def load_config(self):
+        if CONFIG_FILE.exists():
+            config = json.loads(CONFIG_FILE.read_text())
+            # Migrate old config format
+            if 'pinned' in config and 'pinned_apps' not in config:
+                config['pinned_apps'] = config.pop('pinned')
+            if 'pinned_apps' not in config:
+                config['pinned_apps'] = []
+            return config
+        return {"pinned_apps": [], "icon_size": 48}
+        
+    def save_config(self):
+        CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        CONFIG_FILE.write_text(json.dumps(self.config, indent=2))
+        
+    def pin_app(self, desktop_file):
+        if desktop_file not in self.config['pinned_apps']:
+            self.config['pinned_apps'].append(desktop_file)
+            self.save_config()
+            self.update_dock()
+            
+    def unpin_app(self, desktop_file):
+        if desktop_file in self.config['pinned_apps']:
+            self.config['pinned_apps'].remove(desktop_file)
+            self.save_config()
+            self.update_dock()
+    
+    def on_drag_motion(self, widget, context, x, y, time):
+        if not self.drag_source or self.drag_source.desktop_file not in self.config['pinned_apps']:
+            return False
+        
+        # Find drop position for reordering pinned apps only
+        children = self.inner.get_children()
+        pinned_children = [c for c in children if hasattr(c, 'desktop_file') and c.desktop_file in self.config['pinned_apps']]
+        
+        for i, child in enumerate(pinned_children):
+            alloc = child.get_allocation()
+            if x < alloc.x + alloc.width // 2:
+                # Find actual position in all children
+                actual_pos = children.index(child)
+                self.inner.reorder_child(self.drag_source, actual_pos)
+                break
+        
+        Gdk.drag_status(context, Gdk.DragAction.MOVE, time)
+        return True
+    
+
+    def on_drag_data_received(self, widget, context, x, y, data, info, time):
+        if not self.drag_source:
+            return
+        
+        desktop_file = data.get_text()
+        if not desktop_file or desktop_file not in self.config['pinned_apps']:
+            return
+        
+        # Reorder pinned apps based on current visual order
+        children = self.inner.get_children()
+        new_order = []
+        for child in children:
+            if (hasattr(child, 'desktop_file') and 
+                child.desktop_file in self.config['pinned_apps']):
+                new_order.append(child.desktop_file)
+        
+        self.config['pinned_apps'] = new_order
+        self.save_config()
+        
+        Gtk.drag_finish(context, True, False, time)
+            
+    def get_running_apps(self):
+        try:
+            result = subprocess.run(['hyprctl', 'clients', '-j'], capture_output=True, text=True)
+            clients = json.loads(result.stdout)
+            
+            running_classes = set()
+            for client in clients:
+                if 'class' in client and client['class']:
+                    running_classes.add(client['class'])
+            
+            desktop_files = []
+            for class_name in running_classes:
+                desktop_file = self.find_desktop_file(class_name)
+                if desktop_file:
+                    desktop_files.append(desktop_file)
+            
+            return desktop_files
+        except:
+            return []
+    
+    def find_desktop_file(self, class_name):
+        desktop_dirs = [
+            Path("/usr/share/applications"),
+            Path.home() / ".local/share/applications"
+        ]
+        
+        class_name = class_name.lower()
+        
+        for d in desktop_dirs:
+            if not d.exists():
+                continue
+            for desktop_file in d.glob("*.desktop"):
+                try:
+                    lines = desktop_file.read_text().splitlines()
+
+                    in_main = False
+                    startup_wmclass = None
+                    exec_cmd = None
+
+                    for line in lines:
+                        if line.strip() == "[Desktop Entry]":
+                            in_main = True
+                            continue
+                        elif line.startswith("[") and in_main:
+                            break
+                        elif in_main:
+                            if line.startswith("StartupWMClass="):
+                                startup_wmclass = line.split("=",1)[1].strip().lower()
+                            elif line.startswith("Exec="):
+                                exec_cmd = line.split("=",1)[1].strip()
+
+                    # Match rules (strict)
+                    if startup_wmclass and startup_wmclass == class_name:
+                        return desktop_file.name
+
+                    # fallback: match filename
+                    if desktop_file.stem.lower() == class_name:
+                        return desktop_file.name
+
+                except:
+                    continue
+
+        return None
+
+
+        
+    def update_dock(self):
+        for child in self.inner.get_children():
+            self.inner.remove(child)
+            
+        running_apps = self.get_running_apps()
+        all_apps = list(dict.fromkeys(self.config['pinned_apps'] + running_apps))
+        
+        for desktop_file in all_apps:
+            is_running = desktop_file in running_apps
+            icon = DockIcon(desktop_file, is_running, self)
+            self.inner.pack_start(icon, False, False, 0)
+            
+        self.show_all()
+        return True
+
+
+def add_css():
+    css = b"""
+    #ydock {
+        background: transparent;
+    }
+
+    #dock-inner {
+        background-color: rgba(15, 18, 28, 0.93);
+        border-radius: 20px;
+        padding: 5px 10px 0px 10px;
+    }
+
+    #dock-inner button {
+        background: transparent;
+        border: none;
+        border-radius: 14px;
+        padding: 4px;
+    }
+
+    #dock-inner button:hover {
+        background-color: rgba(255, 255, 255, 0.10);
+    }
+    """
+
+    style_provider = Gtk.CssProvider()
+    style_provider.load_from_data(css)
+
+    screen = Gdk.Screen.get_default()
+    Gtk.StyleContext.add_provider_for_screen(
+        screen,
+        style_provider,
+        Gtk.STYLE_PROVIDER_PRIORITY_USER,
+    )
+
+
+def main():
+    add_css()
+
+    win = DockWindow()
+    win.connect("destroy", Gtk.main_quit)
+    Gtk.main()
+
+
+if __name__ == "__main__":
+    main()

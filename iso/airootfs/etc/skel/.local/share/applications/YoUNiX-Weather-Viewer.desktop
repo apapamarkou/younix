@@ -9,3 +9,4 @@ Comment=YoUNiX Weather Viewer
 Path=
 Terminal=false
 StartupNotify=false
+StartupWMClass=yweather

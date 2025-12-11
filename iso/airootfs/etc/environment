@@ -36,3 +36,5 @@ QT_FONT_DPI=96
 QT_QPA_FONTDIR=/usr/share/fonts
 QT_ICON_THEME=Breeze-Dark
 
+GDK_BACKEND=wayland
+QT_QPA_PLATFORM=wayland
