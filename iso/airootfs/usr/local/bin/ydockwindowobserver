@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+import subprocess
+import json
+import socket
+import threading
+
+def get_hyprland_socket():
+    """Get Hyprland IPC socket path"""
+    import os
+    import glob
+    
+    # Try environment variable first
+    signature = os.environ.get('HYPRLAND_INSTANCE_SIGNATURE')
+    if signature:
+        socket_path = f"/run/user/{os.getuid()}/hypr/{signature}/.socket2.sock"
+        if os.path.exists(socket_path):
+            return socket_path
+    
+    # Fallback: find any Hyprland socket
+    sockets = glob.glob(f"/run/user/{os.getuid()}/hypr/*/.socket2.sock")
+    if sockets:
+        return sockets[0]
+    
+    return None
+
+def listen_to_events():
+    """Listen to Hyprland events via socket"""
+    socket_path = get_hyprland_socket()
+    if not socket_path:
+        print("Error: Could not find Hyprland socket")
+        return
+    
+    try:
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.connect(socket_path)
+        
+        print("Listening for Hyprland window events...")
+        
+        while True:
+            data = sock.recv(1024).decode('utf-8')
+            if not data:
+                break
+                
+            for line in data.strip().split('\n'):
+                if line.startswith('openwindow>>'):
+                    handle_window_open(line)
+                elif line.startswith('closewindow>>'):
+                    handle_window_close(line)
+                    
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        sock.close()
+
+def handle_window_open(event):
+    """Handle window open event"""
+    # Format: openwindow>>ADDRESS,WORKSPACENAME,WINDOWCLASS,WINDOWTITLE
+    parts = event.replace('openwindow>>', '').split(',', 3)
+    if len(parts) >= 4:
+        address, workspace, window_class, title = parts
+        print("Event=Open")
+        print(f"Title={title}")
+        print(f"Class={window_class}")
+        print(f"Workspace={workspace}")
+        print(f"Address={address}")
+        print()
+
+def handle_window_close(event):
+    """Handle window close event"""
+    # Format: closewindow>>ADDRESS
+    address = event.replace('closewindow>>', '')
+    print("Event=Close")
+    print(f"Address={address}")
+    print()
+
+if __name__ == "__main__":
+    try:
+        listen_to_events()
+    except KeyboardInterrupt:
+        print("\nStopping yobserver...")

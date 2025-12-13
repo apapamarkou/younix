@@ -9,6 +9,9 @@ from gi.repository import Gtk, Gdk, GtkLayerShell, Gio, GLib
 import subprocess
 import json
 import os
+import socket
+import threading
+import math
 from pathlib import Path
 
 CONFIG_FILE = Path.home() / ".config" / "ydock" / "config.json"
@@ -21,6 +24,8 @@ class DockIcon(Gtk.Button):
         self.is_running = is_running
         self.dock = dock
         self.app_info = self.get_app_info()
+        self.is_launching = False
+        self._phase = 0
         
         self.set_relief(Gtk.ReliefStyle.NONE)
         self.set_focus_on_click(False)
@@ -175,11 +180,31 @@ class DockIcon(Gtk.Button):
             
     def launch_app(self):
         if self.app_info['exec']:
+            self.is_launching = True
+            self.start_launch_animation()
             # Remove desktop entry field codes
             exec_cmd = self.app_info['exec']
             for code in ['%U', '%F', '%u', '%f', '%i', '%c', '%k']:
                 exec_cmd = exec_cmd.replace(code, '')
             subprocess.Popen(exec_cmd.split())
+    
+    def start_launch_animation(self):
+        """Start launching animation"""
+        GLib.timeout_add(50, self.animate)
+    
+    def animate(self):
+        """Animate icon opacity during launch"""
+        if not self.is_launching:
+            self.set_opacity(1.0)
+            return False
+        self._phase = (self._phase + 0.1) % (2 * math.pi)
+        self.set_opacity(0.5 + 0.5 * math.sin(self._phase))
+        return True
+    
+    def stop_launch_animation(self):
+        """Stop launching animation"""
+        self.is_launching = False
+        self.set_opacity(1.0)
         
     # --- MODIFIED: Improved window matching logic for Hyprland/WM classes ---
     def get_app_windows(self):
@@ -250,7 +275,7 @@ class DockIcon(Gtk.Button):
     
     def show_context_menu(self, event):
         menu = Gtk.Menu()
-        menu.attach_to_widget(self.dock, None)
+        menu.attach_to_widget(self, None)
         
         # Show windows first
         if self.is_running:
@@ -260,11 +285,37 @@ class DockIcon(Gtk.Button):
                     is_hidden = window['workspace'] == 99
                     window_item = Gtk.MenuItem(label=window['title'][:30] + ('...' if len(window['title']) > 30 else ''))
                     
-                    if not is_hidden:
-                        window_item.connect("activate", lambda w, addr=window['address']: self.focus_window(addr))
-                    else:
-                        window_item.connect("activate", lambda w, addr=window['address']: self.unhide_window(addr))
+                    # Create submenu for window operations
+                    submenu = Gtk.Menu()
                     
+                    # Focus
+                    focus_item = Gtk.MenuItem(label="Focus")
+                    focus_item.connect("activate", lambda w, addr=window['address']: self.focus_window(addr))
+                    submenu.append(focus_item)
+                    
+                    # Hide/Show
+                    if is_hidden:
+                        show_item = Gtk.MenuItem(label="Show")
+                        show_item.connect("activate", lambda w, addr=window['address']: self.unhide_window(addr))
+                        submenu.append(show_item)
+                    else:
+                        hide_item = Gtk.MenuItem(label="Hide")
+                        hide_item.connect("activate", lambda w, addr=window['address']: self.hide_window(addr))
+                        submenu.append(hide_item)
+                    
+                    # Close
+                    close_item = Gtk.MenuItem(label="Close")
+                    close_item.connect("activate", lambda w, addr=window['address']: self.close_window(addr))
+                    submenu.append(close_item)
+                    
+                    # Move to workspace 1-7
+                    submenu.append(Gtk.SeparatorMenuItem())
+                    for ws in range(1, 8):
+                        ws_item = Gtk.MenuItem(label=f"Move to workspace {ws}")
+                        ws_item.connect("activate", lambda w, addr=window['address'], workspace=ws: self.move_window_to_workspace(addr, workspace))
+                        submenu.append(ws_item)
+                    
+                    window_item.set_submenu(submenu)
                     menu.append(window_item)
                 
                 menu.append(Gtk.SeparatorMenuItem())
@@ -352,17 +403,329 @@ class DockIcon(Gtk.Button):
 
 
 
+class TrashIcon(Gtk.Button):
+    def __init__(self, dock):
+        super().__init__()
+        self.dock = dock
+        self.monitor = None
+        
+        self.set_relief(Gtk.ReliefStyle.NONE)
+        self.set_focus_on_click(False)
+        self.set_tooltip_text("Trash")
+        
+        self.update_icon()
+        self.start_trash_monitor()
+        
+        self.connect("clicked", self.on_left_click)
+        self.connect("button-press-event", self.on_button_press)
+    
+    def update_icon(self):
+        # Check if trash has items
+        trash_path = Path.home() / ".local/share/Trash/files"
+        has_items = trash_path.exists() and any(trash_path.iterdir())
+        
+        icon_name = "user-trash-full" if has_items else "user-trash"
+        image = Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.DIALOG)
+        
+        # Clear existing children and add new image
+        for child in self.get_children():
+            self.remove(child)
+        
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        box.pack_start(image, False, False, 0)
+        
+        spacer = Gtk.Box()
+        spacer.set_size_request(1, 8)
+        box.pack_start(spacer, False, False, 0)
+        
+        box.show_all()
+        self.add(box)
+    
+    def on_left_click(self, button):
+        subprocess.Popen(["thunar", "trash://"], stderr=subprocess.DEVNULL)
+    
+    def on_button_press(self, widget, event):
+        if event.button == 3:  # Right click
+            self.show_context_menu(event)
+            return True
+        return False
+    
+    def show_context_menu(self, event):
+        # Check if trash has items
+        trash_path = Path.home() / ".local/share/Trash/files"
+        has_items = trash_path.exists() and any(trash_path.iterdir())
+        
+        if has_items:
+            menu = Gtk.Menu()
+            menu.attach_to_widget(self, None)
+            empty_item = Gtk.MenuItem(label="Empty Trash")
+            empty_item.connect("activate", self.empty_trash)
+            menu.append(empty_item)
+            menu.show_all()
+            menu.popup(None, None, None, None, event.button, event.time)
+    
+    def empty_trash(self, menu_item):
+        subprocess.Popen(["gio", "trash", "--empty"])
+        GLib.timeout_add(500, self.update_icon)
+    
+    def start_trash_monitor(self):
+        """Monitor trash directory for changes"""
+        trash_path = Path.home() / ".local/share/Trash/files"
+        if not trash_path.exists():
+            trash_path.mkdir(parents=True, exist_ok=True)
+        
+        try:
+            file = Gio.File.new_for_path(str(trash_path))
+            self.monitor = file.monitor_directory(Gio.FileMonitorFlags.NONE, None)
+            self.monitor.connect("changed", self.on_trash_changed)
+        except Exception:
+            pass
+    
+    def on_trash_changed(self, monitor, file, other_file, event_type):
+        """Handle trash directory changes"""
+        if event_type in [Gio.FileMonitorEvent.CREATED, Gio.FileMonitorEvent.DELETED]:
+            GLib.idle_add(self.update_icon)
+
+class FolderMenuItem(Gtk.MenuItem):
+    def __init__(self, folder_path, dock):
+        super().__init__()
+        self.folder_path = folder_path
+        self.dock = dock
+        
+        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        
+        name_label = Gtk.Label(label=Path(folder_path).name)
+        name_label.set_halign(Gtk.Align.START)
+        hbox.pack_start(name_label, True, True, 0)
+        
+        select_button = Gtk.Button(label="Select")
+        select_button.set_relief(Gtk.ReliefStyle.NONE)
+        select_button.connect("clicked", self.on_select_clicked)
+        hbox.pack_start(select_button, False, False, 0)
+        
+        self.add(hbox)
+        
+        # important! do not erase the following line
+        self.connect("activate", self.on_select_clicked)
+        
+        self.show_all()
+    
+    def on_select_clicked(self, button):
+        self.dock.add_folder(self.folder_path)
+        menu = self.get_parent()
+        while menu:
+            if isinstance(menu, Gtk.Menu):
+                menu.popdown()
+                break
+            menu = menu.get_parent()
+
+class FolderIcon(Gtk.Button):
+    def __init__(self, folder_path, dock):
+        super().__init__()
+        self.folder_path = folder_path
+        self.dock = dock
+        
+        self.set_relief(Gtk.ReliefStyle.NONE)
+        self.set_focus_on_click(False)
+        self.set_tooltip_text(Path(folder_path).name)
+        
+        # A generic only icon would be:
+        # image = Gtk.Image.new_from_icon_name("folder", Gtk.IconSize.DIALOG)
+        
+        # Determine the appropriate icon name
+        folder_path_obj = Path(folder_path)
+        home = Path.home()
+        icon_name = "folder" # Default fallback icon name
+
+        if folder_path_obj == home / "Downloads":
+            icon_name = "folder-download"
+        elif folder_path_obj == home / "Documents":
+            icon_name = "folder-documents"
+        elif folder_path_obj == home / "Pictures":
+            icon_name = "folder-pictures"
+        elif folder_path_obj == home / "Videos":
+            icon_name = "folder-videos"
+        elif folder_path_obj == home / "Music":
+            icon_name = "folder-music"
+        elif folder_path_obj == home / "Desktop":
+            icon_name = "folder-desktop"
+        
+        # Create the image from the determined icon name
+        image = Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.DIALOG)
+        
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        box.pack_start(image, False, False, 0)
+        
+        spacer = Gtk.Box()
+        spacer.set_size_request(1, 8)
+        box.pack_start(spacer, False, False, 0)
+        
+        box.show_all()
+        self.add(box)
+        
+        self.connect("clicked", self.on_left_click)
+        self.connect("button-press-event", self.on_button_press)
+    
+    def on_left_click(self, button):
+        self.show_folder_contents()
+    
+    def on_button_press(self, widget, event):
+        if event.button == 3:  # Right click
+            self.show_context_menu(event)
+            return True
+        return False
+    
+    def show_folder_contents(self):
+        menu = Gtk.Menu()
+        menu.attach_to_widget(self, None)
+        
+        try:
+            folder = Path(self.folder_path)
+            for item in sorted(folder.iterdir()):
+                if item.is_file() or item.is_dir():
+                    item_menu = Gtk.MenuItem()
+                    
+                    hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+                    
+                    if item.is_dir():
+                        icon = Gtk.Image.new_from_icon_name("folder", Gtk.IconSize.MENU)
+                        hbox.pack_start(icon, False, False, 0)
+                    
+                    label = Gtk.Label(label=item.name)
+                    label.set_halign(Gtk.Align.START)
+                    hbox.pack_start(label, True, True, 0)
+                    
+                    item_menu.add(hbox)
+                    item_menu.connect("activate", lambda w, path=str(item): subprocess.Popen(["xdg-open", path]))
+                    menu.append(item_menu)
+        except:
+            pass
+        
+        menu.show_all()
+        menu.popup_at_widget(self, Gdk.Gravity.SOUTH, Gdk.Gravity.NORTH, None)
+    
+    def show_context_menu(self, event):
+        menu = Gtk.Menu()
+        menu.attach_to_widget(self, None)
+        
+        open_item = Gtk.MenuItem(label="Open Folder")
+        open_item.connect("activate", lambda w: subprocess.Popen(["thunar", self.folder_path], stderr=subprocess.DEVNULL))
+        menu.append(open_item)
+        
+        remove_item = Gtk.MenuItem(label="Remove from Dock")
+        remove_item.connect("activate", lambda w: self.dock.remove_folder(self.folder_path))
+        menu.append(remove_item)
+        
+        menu.show_all()
+        menu.popup(None, None, None, None, event.button, event.time)
+
+class DockSeparator(Gtk.EventBox):
+    def __init__(self, dock):
+        super().__init__()
+        self.dock = dock
+        self.set_size_request(10, 48)
+        separator = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+        separator.set_margin_top(8)
+        separator.set_margin_bottom(8)
+        self.add(separator)
+        
+        self.connect("button-press-event", self.on_button_press)
+        self.set_visible_window(True)
+    
+    def on_button_press(self, widget, event):
+        if event.button == 3:  # Right click
+            self.show_dock_menu(event)
+            return True
+        return False
+    
+    def show_dock_menu(self, event):
+        menu = Gtk.Menu()
+        menu.attach_to_widget(self, None)
+        
+        # Add Folder
+        add_folder_item = Gtk.MenuItem(label="Add Folder")
+        add_folder_item.connect("activate", self.on_add_folder)
+        menu.append(add_folder_item)
+        
+        # Dock Place
+        dock_place_item = Gtk.MenuItem(label="Dock Place")
+        dock_submenu = Gtk.Menu()
+        
+        bottom_item = Gtk.MenuItem(label="Bottom")
+        bottom_item.connect("activate", lambda w: self.dock.set_position("bottom"))
+        dock_submenu.append(bottom_item)
+        
+        left_item = Gtk.MenuItem(label="Left")
+        left_item.connect("activate", lambda w: self.dock.set_position("left"))
+        dock_submenu.append(left_item)
+        
+        right_item = Gtk.MenuItem(label="Right")
+        right_item.connect("activate", lambda w: self.dock.set_position("right"))
+        dock_submenu.append(right_item)
+        
+        dock_place_item.set_submenu(dock_submenu)
+        menu.append(dock_place_item)
+        
+        # Recycle Bin
+        recycle_item = Gtk.MenuItem(label="Recycle Bin")
+        recycle_submenu = Gtk.Menu()
+        
+        show_trash = self.dock.config.get('show_trash', True)
+        if show_trash:
+            hide_item = Gtk.MenuItem(label="Hide")
+            hide_item.connect("activate", lambda w: self.dock.toggle_trash(False))
+            recycle_submenu.append(hide_item)
+        else:
+            show_item = Gtk.MenuItem(label="Show")
+            show_item.connect("activate", lambda w: self.dock.toggle_trash(True))
+            recycle_submenu.append(show_item)
+        
+        recycle_item.set_submenu(recycle_submenu)
+        menu.append(recycle_item)
+        
+        menu.show_all()
+        menu.popup(None, None, None, None, event.button, event.time)
+    
+    def on_add_folder(self, menu_item):
+        # Close menu first
+        menu = menu_item.get_parent()
+        if menu:
+            menu.popdown()
+        
+        # Use GLib.idle_add to open dialog after menu closes
+        GLib.idle_add(self._open_folder_dialog)
+    
+    def _open_folder_dialog(self):
+        dialog = Gtk.FileChooserDialog(
+            title="::Select Folder",
+            parent=None,  # No parent to make it floating
+            action=Gtk.FileChooserAction.SELECT_FOLDER
+        )
+        dialog.add_buttons(
+            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_OPEN, Gtk.ResponseType.OK
+        )
+        
+        # Center dialog on screen
+        dialog.set_position(Gtk.WindowPosition.CENTER)
+        
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            folder_path = dialog.get_filename()
+            self.dock.add_folder(folder_path)
+        
+        dialog.destroy()
+        return False  # Don't repeat
+
 class DockWindow(Gtk.Window):
     def __init__(self):
         super().__init__(type=Gtk.WindowType.TOPLEVEL)
         self.config = self.load_config()
         self.drag_source = None
+        self.update_pending = False
         
         GtkLayerShell.init_for_window(self)
         GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
-        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
-        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, False)
-        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, False)
         GtkLayerShell.set_exclusive_zone(self, 80)
         
         self.set_app_paintable(True)
@@ -372,23 +735,35 @@ class DockWindow(Gtk.Window):
             
         self.set_name("ydock")
         
-        self.inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        self.inner.set_name("dock-inner")
-        self.inner.set_margin_top(5)
-        self.inner.set_margin_bottom(0)
-        self.inner.set_margin_start(15)
-        self.inner.set_margin_end(15)
+        self.inner_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        self.inner_box.set_name("dock-inner")
+        self.inner_box.set_margin_top(5)
+        self.inner_box.set_margin_bottom(0)
+        self.inner_box.set_margin_start(15)
+        self.inner_box.set_margin_end(15)
+        
+        # Create EventBox to catch clicks on empty area
+        self.inner_event_box = Gtk.EventBox()
+        self.inner_event_box.add(self.inner_box)
+        self.inner_event_box.connect("button-press-event", self.on_dock_button_press)
+        self.inner_event_box.set_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.inner_event_box.set_visible_window(True)
         
         # Enable drop on the box
-        self.inner.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.MOVE)
-        self.inner.drag_dest_add_text_targets()
-        self.inner.connect("drag-motion", self.on_drag_motion)
-        self.inner.connect("drag-data-received", self.on_drag_data_received)
+        self.inner_box.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.MOVE)
+        self.inner_box.drag_dest_add_text_targets()
+        self.inner_box.connect("drag-motion", self.on_drag_motion)
+        self.inner_box.connect("drag-data-received", self.on_drag_data_received)
         
-        self.add(self.inner)
+        self.inner = self.inner_box  # Keep name for consistency
+        
+        self.add(self.inner_event_box)
+        
+        # Apply saved position after inner is created
+        self.apply_position(self.config.get('position', 'bottom'))
         
         self.update_dock()
-        GLib.timeout_add_seconds(2, self.update_dock)
+        self.start_window_observer()
         self.show_all()
         
     def load_config(self):
@@ -399,8 +774,14 @@ class DockWindow(Gtk.Window):
                 config['pinned_apps'] = config.pop('pinned')
             if 'pinned_apps' not in config:
                 config['pinned_apps'] = []
+            if 'folders' not in config:
+                config['folders'] = []
+            if 'show_trash' not in config:
+                config['show_trash'] = True
+            if 'position' not in config:
+                config['position'] = 'bottom'
             return config
-        return {"pinned_apps": [], "icon_size": 48}
+        return {"pinned_apps": [], "folders": [], "show_trash": True, "icon_size": 48, "position": "bottom"}
         
     def save_config(self):
         CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -458,6 +839,89 @@ class DockWindow(Gtk.Window):
         self.save_config()
         
         Gtk.drag_finish(context, True, False, time)
+    
+    def on_dock_button_press(self, widget, event):
+        if event.button == 3:  # Right click
+            self.show_dock_menu(event)
+            return True
+        return False
+    
+    def show_dock_menu(self, event):
+        menu = Gtk.Menu()
+        menu.attach_to_widget(self, None)
+        
+        # Add Folder
+        add_folder_item = Gtk.MenuItem(label="Add Folder")
+        folder_submenu = Gtk.Menu()
+        self.create_folder_submenu(folder_submenu, Path.home())
+        add_folder_item.set_submenu(folder_submenu)
+        menu.append(add_folder_item)
+        
+        # Dock Place
+        dock_place_item = Gtk.MenuItem(label="Dock Place")
+        dock_submenu = Gtk.Menu()
+        
+        bottom_item = Gtk.MenuItem(label="Bottom")
+        bottom_item.connect("activate", lambda w: self.set_position("bottom"))
+        dock_submenu.append(bottom_item)
+        
+        left_item = Gtk.MenuItem(label="Left")
+        left_item.connect("activate", lambda w: self.set_position("left"))
+        dock_submenu.append(left_item)
+        
+        right_item = Gtk.MenuItem(label="Right")
+        right_item.connect("activate", lambda w: self.set_position("right"))
+        dock_submenu.append(right_item)
+        
+        dock_place_item.set_submenu(dock_submenu)
+        menu.append(dock_place_item)
+        
+        # Recycle Bin
+        recycle_item = Gtk.MenuItem(label="Recycle Bin")
+        recycle_submenu = Gtk.Menu()
+        
+        show_trash = self.config.get('show_trash', True)
+        if show_trash:
+            hide_item = Gtk.MenuItem(label="Hide")
+            hide_item.connect("activate", lambda w: self.toggle_trash(False))
+            recycle_submenu.append(hide_item)
+        else:
+            show_item = Gtk.MenuItem(label="Show")
+            show_item.connect("activate", lambda w: self.toggle_trash(True))
+            recycle_submenu.append(show_item)
+        
+        recycle_item.set_submenu(recycle_submenu)
+        menu.append(recycle_item)
+        
+        menu.show_all()
+        menu.popup(None, None, None, None, event.button, event.time)
+    
+
+    
+    def create_folder_submenu(self, menu, folder_path):
+        try:
+            current_folder_item = FolderMenuItem(str(folder_path), self)
+            menu.append(current_folder_item)
+            menu.append(Gtk.SeparatorMenuItem())
+            
+            for item in sorted(folder_path.iterdir()):
+                if item.is_dir() and not item.name.startswith('.'):
+                    try:
+                        has_subfolders = any(d.is_dir() for d in item.iterdir() if not d.name.startswith('.'))
+                    except:
+                        has_subfolders = False
+                    
+                    if has_subfolders:
+                        menu_item = Gtk.MenuItem(label=item.name)
+                        submenu = Gtk.Menu()
+                        self.create_folder_submenu(submenu, item)
+                        menu_item.set_submenu(submenu)
+                        menu.append(menu_item)
+                    else:
+                        folder_item = FolderMenuItem(str(item), self)
+                        menu.append(folder_item)
+        except:
+            pass
             
     def get_running_apps(self):
         try:
@@ -556,15 +1020,170 @@ class DockWindow(Gtk.Window):
             self.inner.remove(child)
             
         running_apps = self.get_running_apps()
-        all_apps = list(dict.fromkeys(self.config['pinned_apps'] + running_apps))
         
-        for desktop_file in all_apps:
+        # Add pinned apps
+        for desktop_file in self.config['pinned_apps']:
             is_running = desktop_file in running_apps
             icon = DockIcon(desktop_file, is_running, self)
             self.inner.pack_start(icon, False, False, 0)
+        
+        # Add separator if there are pinned apps and running apps
+        unpinned_running = [app for app in running_apps if app not in self.config['pinned_apps']]
+        if self.config['pinned_apps'] and unpinned_running:
+            separator = DockSeparator(self)
+            self.inner.pack_start(separator, False, False, 0)
+        
+        # Add unpinned running apps
+        for desktop_file in unpinned_running:
+            icon = DockIcon(desktop_file, True, self)
+            self.inner.pack_start(icon, False, False, 0)
+        
+        # Add folders
+        for folder_path in self.config['folders']:
+            folder_icon = FolderIcon(folder_path, self)
+            self.inner.pack_start(folder_icon, False, False, 0)
+        
+        # Add separator before trash if there are any items
+        if self.config['pinned_apps'] or unpinned_running or self.config['folders']:
+            separator = DockSeparator(self)
+            self.inner.pack_start(separator, False, False, 0)
+        
+        # Add trash icon if enabled
+        if self.config['show_trash']:
+            if not hasattr(self, 'trash_icon'):
+                self.trash_icon = TrashIcon(self)
+            else:
+                self.trash_icon.update_icon()
+            self.inner.pack_start(self.trash_icon, False, False, 0)
             
         self.show_all()
         return True
+    
+    def add_folder(self, folder_path):
+        if folder_path not in self.config['folders']:
+            self.config['folders'].append(folder_path)
+            self.save_config()
+            self.update_dock()
+    
+    def remove_folder(self, folder_path):
+        if folder_path in self.config['folders']:
+            self.config['folders'].remove(folder_path)
+            self.save_config()
+            self.update_dock()
+    
+    def toggle_trash(self, show):
+        self.config['show_trash'] = show
+        self.save_config()
+        self.update_dock()
+    
+    def apply_position(self, position):
+        # Clear current anchors
+        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, False)
+        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, False)
+        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, False)
+        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, False)
+        
+        if position == "bottom":
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
+            self.inner.set_orientation(Gtk.Orientation.HORIZONTAL)
+        elif position == "left":
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
+            self.inner.set_orientation(Gtk.Orientation.VERTICAL)
+        elif position == "right":
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, True)
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
+            self.inner.set_orientation(Gtk.Orientation.VERTICAL)
+    
+    def set_position(self, position):
+        self.config['position'] = position
+        self.save_config()
+        self.apply_position(position)
+    
+    def start_window_observer(self):
+        """Start listening to Hyprland window events"""
+        def observer_thread():
+            socket_path = self.get_hyprland_socket()
+            if not socket_path:
+                return
+            
+            try:
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                sock.connect(socket_path)
+                
+                while True:
+                    data = sock.recv(1024).decode('utf-8')
+                    if not data:
+                        break
+                    
+                    for line in data.strip().split('\n'):
+                        if line.startswith('openwindow>>'):
+                            self.handle_window_open(line)
+                            self.schedule_update()
+                        elif line.startswith('closewindow>>'):
+                            self.schedule_update()
+                            
+            except Exception:
+                pass
+            finally:
+                sock.close()
+        
+        thread = threading.Thread(target=observer_thread, daemon=True)
+        thread.start()
+    
+    def schedule_update(self):
+        """Schedule dock update with debouncing"""
+        if not self.update_pending:
+            self.update_pending = True
+            GLib.timeout_add(100, self.debounced_update)
+    
+    def debounced_update(self):
+        """Debounced update function"""
+        self.update_pending = False
+        self.update_dock()
+        return False
+    
+    def handle_window_open(self, event):
+        """Handle window open event and stop launch animations"""
+        try:
+            # Parse: openwindow>>ADDRESS,WORKSPACENAME,WINDOWCLASS,WINDOWTITLE
+            parts = event.replace('openwindow>>', '').split(',', 3)
+            if len(parts) >= 3:
+                window_class = parts[2].lower()
+                
+                # Stop launch animation for matching apps
+                for child in self.inner.get_children():
+                    if hasattr(child, 'is_launching') and child.is_launching:
+                        if hasattr(child, 'app_info') and child.app_info.get('exec'):
+                            app_exec = child.app_info['exec'].split()[0].lower()
+                            desktop_stem = child.desktop_file.replace('.desktop', '').lower()
+                            
+                            if (window_class == app_exec or 
+                                window_class in desktop_stem or 
+                                desktop_stem in window_class):
+                                child.stop_launch_animation()
+        except Exception:
+            pass
+    
+    def get_hyprland_socket(self):
+        """Get Hyprland IPC socket path"""
+        import glob
+        
+        # Try environment variable first
+        signature = os.environ.get('HYPRLAND_INSTANCE_SIGNATURE')
+        if signature:
+            socket_path = f"/run/user/{os.getuid()}/hypr/{signature}/.socket2.sock"
+            if os.path.exists(socket_path):
+                return socket_path
+        
+        # Fallback: find any Hyprland socket
+        sockets = glob.glob(f"/run/user/{os.getuid()}/hypr/*/.socket2.sock")
+        if sockets:
+            return sockets[0]
+        
+        return None
 
 
 def add_css():
