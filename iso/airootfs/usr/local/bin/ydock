@@ -190,21 +190,34 @@ class DockIcon(Gtk.Button):
     
     def start_launch_animation(self):
         """Start launching animation"""
-        GLib.timeout_add(50, self.animate)
+        GLib.timeout_add(40, self.animate)
     
     def animate(self):
-        """Animate icon opacity during launch"""
+        """Animate icon with intense opacity and background pulse"""
         if not self.is_launching:
             self.set_opacity(1.0)
+            self.get_style_context().remove_class('launching')
             return False
-        self._phase = (self._phase + 0.1) % (2 * math.pi)
-        self.set_opacity(0.5 + 0.5 * math.sin(self._phase))
+        
+        self._phase = (self._phase + 0.15) % (2 * math.pi)
+        # More intense opacity range: 0.3 to 1.0
+        opacity = 0.3 + 0.7 * (0.5 + 0.5 * math.sin(self._phase))
+        self.set_opacity(opacity)
+        
+        # Add/remove CSS class for background animation
+        style_context = self.get_style_context()
+        if math.sin(self._phase) > 0:
+            style_context.add_class('launching')
+        else:
+            style_context.remove_class('launching')
+        
         return True
     
     def stop_launch_animation(self):
         """Stop launching animation"""
         self.is_launching = False
         self.set_opacity(1.0)
+        self.get_style_context().remove_class('launching')
         
     # --- MODIFIED: Improved window matching logic for Hyprland/WM classes ---
     def get_app_windows(self):
@@ -1207,6 +1220,11 @@ def add_css():
 
     #dock-inner button:hover {
         background-color: rgba(255, 255, 255, 0.10);
+    }
+    
+    #dock-inner button.launching {
+        background-color: rgba(0, 150, 255, 0.25);
+        box-shadow: 0 0 8px rgba(0, 150, 255, 0.4);
     }
     """
 
