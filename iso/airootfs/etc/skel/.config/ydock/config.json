@@ -1,9 +1,10 @@
 {
   "icon_size": 48,
   "pinned_apps": [
+    "chromium.desktop",
+    "code.desktop",
     "thunar.desktop",
     "org.xfce.mousepad.desktop",
-    "chromium.desktop",
     "xfce4-terminal.desktop"
   ],
   "folders": [
