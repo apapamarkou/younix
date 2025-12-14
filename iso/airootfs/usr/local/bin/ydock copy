@@ -31,17 +31,13 @@ class DockIcon(Gtk.Button):
         self.set_focus_on_click(False)
         self.set_tooltip_text(self.app_info['name'])
         
-        dock_size = dock.config.get('dock_size', 48)
         if self.app_info['icon']:
             try:
                 image = Gtk.Image.new_from_icon_name(self.app_info['icon'], Gtk.IconSize.DIALOG)
-                image.set_pixel_size(dock_size)
             except:
                 image = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.DIALOG)
-                image.set_pixel_size(dock_size)
         else:
             image = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.DIALOG)
-            image.set_pixel_size(dock_size)
             
         if is_running:
             box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -397,11 +393,9 @@ class DockIcon(Gtk.Button):
         if not drag_source:
             return
 
-        # Get current pointer position on screen
+        # Πάρε την τρέχουσα θέση του pointer στην οθόνη
         display = Gdk.Display.get_default()
-        seat = display.get_default_seat()
-        device = seat.get_pointer()
-        screen, x_root, y_root = device.get_position()
+        screen, x_root, y_root, mask = Gdk.get_default_root_window().get_pointer()
 
         # Συντεταγμένες dock
         alloc = dock.inner.get_allocation()
@@ -444,9 +438,7 @@ class TrashIcon(Gtk.Button):
         has_items = trash_path.exists() and any(trash_path.iterdir())
         
         icon_name = "user-trash-full" if has_items else "user-trash"
-        dock_size = self.dock.config.get('dock_size', 48)
         image = Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.DIALOG)
-        image.set_pixel_size(dock_size)
         
         # Clear existing children and add new image
         for child in self.get_children():
@@ -572,9 +564,7 @@ class FolderIcon(Gtk.Button):
             icon_name = "folder-desktop"
         
         # Create the image from the determined icon name
-        dock_size = dock.config.get('dock_size', 48)
         image = Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.DIALOG)
-        image.set_pixel_size(dock_size)
         
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         box.pack_start(image, False, False, 0)
@@ -657,9 +647,57 @@ class DockSeparator(Gtk.EventBox):
     
     def on_button_press(self, widget, event):
         if event.button == 3:  # Right click
-            self.dock.show_dock_menu(event)
+            self.show_dock_menu(event)
             return True
         return False
+    
+    def show_dock_menu(self, event):
+        menu = Gtk.Menu()
+        menu.attach_to_widget(self, None)
+        
+        # Add Folder
+        add_folder_item = Gtk.MenuItem(label="Add Folder")
+        add_folder_item.connect("activate", self.on_add_folder)
+        menu.append(add_folder_item)
+        
+        # Dock Place
+        dock_place_item = Gtk.MenuItem(label="Dock Place")
+        dock_submenu = Gtk.Menu()
+        
+        bottom_item = Gtk.MenuItem(label="Bottom")
+        bottom_item.connect("activate", lambda w: self.dock.set_position("bottom"))
+        dock_submenu.append(bottom_item)
+        
+        left_item = Gtk.MenuItem(label="Left")
+        left_item.connect("activate", lambda w: self.dock.set_position("left"))
+        dock_submenu.append(left_item)
+        
+        right_item = Gtk.MenuItem(label="Right")
+        right_item.connect("activate", lambda w: self.dock.set_position("right"))
+        dock_submenu.append(right_item)
+        
+        dock_place_item.set_submenu(dock_submenu)
+        menu.append(dock_place_item)
+        
+        # Recycle Bin
+        recycle_item = Gtk.MenuItem(label="Recycle Bin")
+        recycle_submenu = Gtk.Menu()
+        
+        show_trash = self.dock.config.get('show_trash', True)
+        if show_trash:
+            hide_item = Gtk.MenuItem(label="Hide")
+            hide_item.connect("activate", lambda w: self.dock.toggle_trash(False))
+            recycle_submenu.append(hide_item)
+        else:
+            show_item = Gtk.MenuItem(label="Show")
+            show_item.connect("activate", lambda w: self.dock.toggle_trash(True))
+            recycle_submenu.append(show_item)
+        
+        recycle_item.set_submenu(recycle_submenu)
+        menu.append(recycle_item)
+        
+        menu.show_all()
+        menu.popup(None, None, None, None, event.button, event.time)
     
     def on_add_folder(self, menu_item):
         # Close menu first
@@ -758,10 +796,8 @@ class DockWindow(Gtk.Window):
                 config['position'] = 'bottom'
             if 'panel_opacity' not in config:
                 config['panel_opacity'] = 0.93
-            if 'dock_size' not in config:
-                config['dock_size'] = 48
             return config
-        return {"pinned_apps": [], "folders": [], "show_trash": True, "icon_size": 48, "position": "bottom", "panel_opacity": 0.93, "dock_size": 48}
+        return {"pinned_apps": [], "folders": [], "show_trash": True, "icon_size": 48, "position": "bottom", "panel_opacity": 0.93}
         
     def save_config(self):
         CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -899,15 +935,18 @@ class DockWindow(Gtk.Window):
         recycle_item.set_submenu(recycle_submenu)
         menu.append(recycle_item)
         
-        # Panel Opacity dialog
-        opacity_item = Gtk.MenuItem(label="Transparency...")
-        opacity_item.connect("activate", lambda w: GLib.idle_add(self.show_transparency_dialog))
-        menu.append(opacity_item)
+        # Panel Opacity
+        opacity_item = Gtk.MenuItem(label="Panel Opacity")
+        opacity_submenu = Gtk.Menu()
         
-        # Dock Size dialog
-        size_item = Gtk.MenuItem(label="Dock Size...")
-        size_item.connect("activate", lambda w: GLib.idle_add(self.show_size_dialog))
-        menu.append(size_item)
+        opacity_levels = [("100%", 0.93), ("75%", 0.70), ("50%", 0.47), ("25%", 0.24)]
+        for label, opacity in opacity_levels:
+            opacity_menu_item = Gtk.MenuItem(label=label)
+            opacity_menu_item.connect("activate", lambda w, op=opacity: self.set_panel_opacity(op))
+            opacity_submenu.append(opacity_menu_item)
+        
+        opacity_item.set_submenu(opacity_submenu)
+        menu.append(opacity_item)
         
         menu.show_all()
         menu.popup(None, None, None, None, event.button, event.time)
@@ -1107,22 +1146,16 @@ class DockWindow(Gtk.Window):
         if position == "bottom":
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
             self.inner.set_orientation(Gtk.Orientation.HORIZONTAL)
-            self.inner.set_margin_start(15)
-            self.inner.set_margin_end(15)
         elif position == "left":
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
             self.inner.set_orientation(Gtk.Orientation.VERTICAL)
-            self.inner.set_margin_start(0)
-            self.inner.set_margin_end(15)
         elif position == "right":
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, True)
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
             self.inner.set_orientation(Gtk.Orientation.VERTICAL)
-            self.inner.set_margin_start(15)
-            self.inner.set_margin_end(0)
     
     def set_position(self, position):
         self.config['position'] = position
@@ -1234,77 +1267,6 @@ class DockWindow(Gtk.Window):
             return sockets[0]
         
         return None
-    
-    def show_transparency_dialog(self):
-        dialog = Gtk.Dialog(title=":YoUNiX-Dock-Prefs", parent=self, modal=True)
-        dialog.set_default_size(300, 100)
-        dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
-        dialog.set_keep_above(True)
-        dialog.set_type_hint(Gdk.WindowTypeHint.DIALOG)
-        
-        content_area = dialog.get_content_area()
-        content_area.set_spacing(10)
-        content_area.set_margin_top(20)
-        content_area.set_margin_bottom(20)
-        content_area.set_margin_start(20)
-        content_area.set_margin_end(20)
-        
-        label = Gtk.Label(label="Adjust panel transparency:")
-        content_area.pack_start(label, False, False, 0)
-        
-        adjustment = Gtk.Adjustment(value=self.config.get('panel_opacity', 0.93),
-                                    lower=0.1, upper=1.0, step_increment=0.05)
-        scale = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=adjustment)
-        scale.set_digits(2)
-        scale.set_hexpand(True)
-        scale.connect("value-changed", lambda s: self.set_panel_opacity(s.get_value()))
-        content_area.pack_start(scale, True, True, 0)
-        
-        dialog.add_button("Close", Gtk.ResponseType.CLOSE)
-        dialog.show_all()
-        
-        dialog.run()
-        dialog.destroy()
-    
-    def show_size_dialog(self):
-        """Show dock size dialog"""
-        dialog = Gtk.Dialog(title=":YoUNiX-Dock-Prefs", modal=True)
-        dialog.set_default_size(300, 100)
-        dialog.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
-        dialog.set_keep_above(True)
-        dialog.set_type_hint(Gdk.WindowTypeHint.DIALOG)
-        dialog.present()
-        
-        content_area = dialog.get_content_area()
-        content_area.set_spacing(10)
-        content_area.set_margin_top(20)
-        content_area.set_margin_bottom(20)
-        content_area.set_margin_start(20)
-        content_area.set_margin_end(20)
-        
-        label = Gtk.Label(label="Adjust dock size:")
-        content_area.pack_start(label, False, False, 0)
-        
-        adjustment = Gtk.Adjustment(value=self.config.get('dock_size', 48),
-                                  lower=24, upper=96, step_increment=4)
-        scale = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=adjustment)
-        scale.set_digits(0)
-        scale.set_hexpand(True)
-        scale.connect("value-changed", lambda s: self.set_dock_size(int(s.get_value())))
-        content_area.pack_start(scale, True, True, 0)
-        
-        dialog.add_button("Close", Gtk.ResponseType.CLOSE)
-        dialog.show_all()
-        
-        dialog.run()
-        dialog.destroy()
-    
-    def set_dock_size(self, size):
-        """Set dock icon size"""
-        self.config['dock_size'] = size
-        self.save_config()
-        self.update_dock()
-
 
 
 def add_css():

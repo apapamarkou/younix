@@ -20,6 +20,8 @@ text/x-chdr=text-edit.desktop
 text/x-java-source=text-edit.desktop
 application/xml=text-edit.desktop
 application/x-desktop=text-edit.desktop
+inode/directory=thunar.desktop
+
 
 [Added Associations]
 application/x-desktop=org.xfce.mousepad.desktop;text-edit.desktop;
