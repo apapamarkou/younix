@@ -11,8 +11,10 @@
 .config/ydock
 .config/ylauncher
 .config/mimeapps.list
+.config/gtk-3.0 
+.config/gtk-4.0
 
-# .local/bin
+.local/bin/appimage-integrator
 .local/share/applications/img-view.desktop
 .local/share/applications/text-edit.desktop
 .local/share/applications/YoUNiX-Backup.desktop
