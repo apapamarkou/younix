@@ -1,0 +1,17 @@
+{
+  "icon_size": 48,
+  "pinned_apps": [
+    "thunar.desktop",
+    "org.xfce.mousepad.desktop",
+    "chromium.desktop",
+    "xfce4-terminal.desktop"
+  ],
+  "folders": [
+    "/home/user/Documents",
+    "/home/user/Downloads"
+  ],
+  "show_trash": true,
+  "position": "bottom",
+  "panel_opacity": 0.5,
+  "dock_size": 51
+}

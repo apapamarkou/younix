@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Launcher
+Exec=ylauncher
+Type=Application
+MimeType=application/x-shellscript;text/plain;
+NoDisplay=false
+Icon=launcher
+Comment=YoUNiX Application Launcher
+Path=
+Terminal=false
+StartupNotify=false

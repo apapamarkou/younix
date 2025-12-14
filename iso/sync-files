@@ -67,4 +67,8 @@ sudo rsync -a --delete /usr/local/share/shell "$SCRIPT_DIR/airootfs/usr/local/sh
 echo "Syncing to airootfs/usr/share/backgrounds: /usr/share/backgrounds"
 sudo rsync -a --delete /usr/share/backgrounds "$SCRIPT_DIR/airootfs/usr/share/"
 
+# sync /usr/share/pixmaps/launcher.png
+echo "Syncing to airootfs/usr/share/pixmaps/launcher.png: /usr/share/pixmaps/launcher.png"
+sudo rsync -a /usr/share/pixmaps/launcher.png "$SCRIPT_DIR/airootfs/usr/share/pixmaps/"
+
 echo "✅ Sync completed."

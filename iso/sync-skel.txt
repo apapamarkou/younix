@@ -8,7 +8,8 @@
 .config/waybar
 .config/xfce4
 .config/xsettingsd
-.config/ylock
+.config/ydock
+.config/ylauncher
 .config/mimeapps.list
 
 # .local/bin
@@ -28,6 +29,7 @@
 .local/share/applications/YoUNiX-System-Update.desktop
 .local/share/applications/YoUNiX-Time-Machine.desktop
 .local/share/applications/YoUNiX-Weather-Viewer.desktop
+.local/share/applications/YoUNiX-Launcher.desktop
 .local/share/nwg-look
 
 Applications/DropYourAppimagesHere

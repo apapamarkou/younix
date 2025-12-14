@@ -1037,6 +1037,10 @@ class DockWindow(Gtk.Window):
             
         running_apps = self.get_running_apps()
         
+        # Add YoUNiX-Launcher.desktop as first item
+        launcher_icon = DockIcon('YoUNiX-Launcher.desktop', False, self)
+        self.inner.pack_start(launcher_icon, False, False, 0)
+        
         # Add pinned apps
         for desktop_file in self.config['pinned_apps']:
             is_running = desktop_file in running_apps

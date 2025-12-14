@@ -1,0 +1,464 @@
+{
+  "applications": {
+    "144b0b68-6bb2-4ef0-a23f-c7c5372caa23": {
+      "id": "144b0b68-6bb2-4ef0-a23f-c7c5372caa23",
+      "name": "Qt V4L2 video capture utility",
+      "exec": "qvidcap.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/qvidcap.svg",
+      "icon_name": "qvidcap",
+      "folderId": null,
+      "sortId": 0
+    },
+    "0dbd9a33-cff2-4124-a697-bc9c016aea19": {
+      "id": "0dbd9a33-cff2-4124-a697-bc9c016aea19",
+      "name": "Avahi VNC Server Browser",
+      "exec": "bvnc.desktop",
+      "icon": "/usr/share/icons/AdwaitaLegacy/48x48/legacy/network-wired.png",
+      "icon_name": "network-wired",
+      "folderId": null,
+      "sortId": 1
+    },
+    "fa8544be-c0fd-43d3-802b-4505be90ffa0": {
+      "id": "fa8544be-c0fd-43d3-802b-4505be90ffa0",
+      "name": "btop++",
+      "exec": "btop.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/btop.svg",
+      "icon_name": "btop",
+      "folderId": null,
+      "sortId": 2
+    },
+    "a02c8ec1-b46e-4092-b49a-c8551c1e1fac": {
+      "id": "a02c8ec1-b46e-4092-b49a-c8551c1e1fac",
+      "name": "uuctl",
+      "exec": "uuctl.desktop",
+      "icon": "/usr/share/icons/AdwaitaLegacy/48x48/legacy/applications-system.png",
+      "icon_name": "applications-system",
+      "folderId": null,
+      "sortId": 3
+    },
+    "996c0882-6796-4f8a-a4cf-d636eff17267": {
+      "id": "996c0882-6796-4f8a-a4cf-d636eff17267",
+      "name": "Avahi SSH Server Browser",
+      "exec": "bssh.desktop",
+      "icon": "/usr/share/icons/AdwaitaLegacy/48x48/legacy/network-wired.png",
+      "icon_name": "network-wired",
+      "folderId": null,
+      "sortId": 4
+    },
+    "180ec3dc-8497-4bc6-882c-d6df1cb76e12": {
+      "id": "180ec3dc-8497-4bc6-882c-d6df1cb76e12",
+      "name": "Xfce Terminal",
+      "exec": "xfce4-terminal.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/org.xfce.terminal.svg",
+      "icon_name": "org.xfce.terminal",
+      "folderId": null,
+      "sortId": 5
+    },
+    "fdd44719-eb85-4222-8291-a1ada4aed268": {
+      "id": "fdd44719-eb85-4222-8291-a1ada4aed268",
+      "name": "qpwgraph",
+      "exec": "org.rncbc.qpwgraph.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/org.rncbc.qpwgraph.svg",
+      "icon_name": "org.rncbc.qpwgraph",
+      "folderId": null,
+      "sortId": 6
+    },
+    "630bc410-b3eb-42c1-92fb-c8b136c4ee3f": {
+      "id": "630bc410-b3eb-42c1-92fb-c8b136c4ee3f",
+      "name": "Displays Settings",
+      "exec": "nwg-displays.desktop",
+      "icon": "/usr/share/pixmaps/nwg-displays.svg",
+      "icon_name": "nwg-displays",
+      "folderId": null,
+      "sortId": 7
+    },
+    "a398ce43-f14e-438d-af92-0be2f3128893": {
+      "id": "a398ce43-f14e-438d-af92-0be2f3128893",
+      "name": "xgps",
+      "exec": "xgps.desktop",
+      "icon": "/usr/share/gpsd/icons/gpsd-logo.png",
+      "icon_name": "/usr/share/gpsd/icons/gpsd-logo.png",
+      "folderId": null,
+      "sortId": 8
+    },
+    "dc1475c1-a256-4289-850a-b4aae508a99b": {
+      "id": "dc1475c1-a256-4289-850a-b4aae508a99b",
+      "name": "Kdenlive",
+      "exec": "org.kde.kdenlive.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/kdenlive.svg",
+      "icon_name": "kdenlive",
+      "folderId": null,
+      "sortId": 9
+    },
+    "5e87beff-a69f-4658-b618-0c8e41d0b9a6": {
+      "id": "5e87beff-a69f-4658-b618-0c8e41d0b9a6",
+      "name": "Qt V4L2 test Utility",
+      "exec": "qv4l2.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/qv4l2.svg",
+      "icon_name": "qv4l2",
+      "folderId": null,
+      "sortId": 10
+    },
+    "66bdd70c-5fe5-4be7-a909-bbff1fba8cbc": {
+      "id": "66bdd70c-5fe5-4be7-a909-bbff1fba8cbc",
+      "name": "xgpsspeed",
+      "exec": "xgpsspeed.desktop",
+      "icon": "/usr/share/gpsd/icons/gpsd-logo.png",
+      "icon_name": "/usr/share/gpsd/icons/gpsd-logo.png",
+      "folderId": null,
+      "sortId": 11
+    },
+    "a475e6e7-6ce1-4711-a5e8-8f5f0a1d5509": {
+      "id": "a475e6e7-6ce1-4711-a5e8-8f5f0a1d5509",
+      "name": "About Xfce",
+      "exec": "xfce4-about.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/org.xfce.about.svg",
+      "icon_name": "org.xfce.about",
+      "folderId": null,
+      "sortId": 12
+    },
+    "ee215d4f-c761-4fb8-90e7-1e17edf9916f": {
+      "id": "ee215d4f-c761-4fb8-90e7-1e17edf9916f",
+      "name": "Thunar Preferences",
+      "exec": "thunar-settings.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/org.xfce.thunar.svg",
+      "icon_name": "org.xfce.thunar",
+      "folderId": null,
+      "sortId": 13
+    },
+    "fe0098a3-4e80-478f-a343-0229a460f432": {
+      "id": "fe0098a3-4e80-478f-a343-0229a460f432",
+      "name": "Vim",
+      "exec": "vim.desktop",
+      "icon": "/usr/share/icons/hicolor/48x48/apps/gvim.png",
+      "icon_name": "gvim",
+      "folderId": null,
+      "sortId": 14
+    },
+    "76b23d64-f219-4e78-8e97-b919e50a8e3e": {
+      "id": "76b23d64-f219-4e78-8e97-b919e50a8e3e",
+      "name": "Xarchiver",
+      "exec": "xarchiver.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/xarchiver.svg",
+      "icon_name": "xarchiver",
+      "folderId": null,
+      "sortId": 15
+    },
+    "2a322a04-14d3-4097-b098-5d767100220d": {
+      "id": "2a322a04-14d3-4097-b098-5d767100220d",
+      "name": "Bulk Rename",
+      "exec": "thunar-bulk-rename.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/org.xfce.thunar.svg",
+      "icon_name": "org.xfce.thunar",
+      "folderId": null,
+      "sortId": 16
+    },
+    "52a73133-cedf-4e1e-9501-45688fe90fe4": {
+      "id": "52a73133-cedf-4e1e-9501-45688fe90fe4",
+      "name": "Micro",
+      "exec": "micro.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/micro.svg",
+      "icon_name": "micro",
+      "folderId": null,
+      "sortId": 17
+    },
+    "ff3288b7-fd0f-4569-a5e4-f1dcbafc8963": {
+      "id": "ff3288b7-fd0f-4569-a5e4-f1dcbafc8963",
+      "name": "Volume Control",
+      "exec": "org.pulseaudio.pavucontrol.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/org.pulseaudio.pavucontrol.svg",
+      "icon_name": "org.pulseaudio.pavucontrol",
+      "folderId": null,
+      "sortId": 18
+    },
+    "afbf4d4f-2ad8-4b7f-8e2a-0765a3de169c": {
+      "id": "afbf4d4f-2ad8-4b7f-8e2a-0765a3de169c",
+      "name": "GTK Settings",
+      "exec": "nwg-look.desktop",
+      "icon": "/usr/share/pixmaps/nwg-look.svg",
+      "icon_name": "nwg-look",
+      "folderId": null,
+      "sortId": 19
+    },
+    "60998436-1aa5-46fc-99ca-bb763d04ac35": {
+      "id": "60998436-1aa5-46fc-99ca-bb763d04ac35",
+      "name": "Htop",
+      "exec": "htop.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/htop.svg",
+      "icon_name": "htop",
+      "folderId": null,
+      "sortId": 20
+    },
+    "ae3e5e4e-3e58-4266-ba6c-aa96e0a0e1ec": {
+      "id": "ae3e5e4e-3e58-4266-ba6c-aa96e0a0e1ec",
+      "name": "GNU Image Manipulation Program",
+      "exec": "gimp.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/gimp.svg",
+      "icon_name": "gimp",
+      "folderId": null,
+      "sortId": 21
+    },
+    "32d8b055-11ee-46d0-ba19-afbf67f70c59": {
+      "id": "32d8b055-11ee-46d0-ba19-afbf67f70c59",
+      "name": "Chromium",
+      "exec": "chromium.desktop",
+      "icon": "/usr/share/icons/hicolor/256x256/apps/chromium.png",
+      "icon_name": "chromium",
+      "folderId": null,
+      "sortId": 22
+    },
+    "cde72ce1-a2b8-4194-b251-4a5d840085f3": {
+      "id": "cde72ce1-a2b8-4194-b251-4a5d840085f3",
+      "name": "nnn",
+      "exec": "nnn.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/nnn.svg",
+      "icon_name": "nnn",
+      "folderId": null,
+      "sortId": 23
+    },
+    "31d284df-0568-4d8e-b7c8-b6ca0cd3ebc6": {
+      "id": "31d284df-0568-4d8e-b7c8-b6ca0cd3ebc6",
+      "name": "Avahi Zeroconf Browser",
+      "exec": "avahi-discover.desktop",
+      "icon": "/usr/share/icons/AdwaitaLegacy/48x48/legacy/network-wired.png",
+      "icon_name": "network-wired",
+      "folderId": null,
+      "sortId": 24
+    },
+    "e5972bbd-b9f8-4d44-88d7-6dd41fc9e236": {
+      "id": "e5972bbd-b9f8-4d44-88d7-6dd41fc9e236",
+      "name": "mpv Media Player",
+      "exec": "mpv.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/mpv.svg",
+      "icon_name": "mpv",
+      "folderId": null,
+      "sortId": 25
+    },
+    "e9d9b526-db34-45cd-8596-7ee43ff976e3": {
+      "id": "e9d9b526-db34-45cd-8596-7ee43ff976e3",
+      "name": "Visual Studio Code",
+      "exec": "code.desktop",
+      "icon": "/usr/share/pixmaps/visual-studio-code.png",
+      "icon_name": "visual-studio-code",
+      "folderId": null,
+      "sortId": 26
+    },
+    "5ac4c512-5755-4b7f-81a4-b6227814377d": {
+      "id": "5ac4c512-5755-4b7f-81a4-b6227814377d",
+      "name": "Mousepad",
+      "exec": "org.xfce.mousepad.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/org.xfce.mousepad.svg",
+      "icon_name": "org.xfce.mousepad",
+      "folderId": null,
+      "sortId": 27
+    },
+    "20423f5f-95cb-425d-9b3b-82e0282ad7fd": {
+      "id": "20423f5f-95cb-425d-9b3b-82e0282ad7fd",
+      "name": "Advanced Network Configuration",
+      "exec": "nm-connection-editor.desktop",
+      "icon": "/usr/share/icons/AdwaitaLegacy/48x48/legacy/preferences-system-network.png",
+      "icon_name": "preferences-system-network",
+      "folderId": null,
+      "sortId": 28
+    },
+    "86637b56-7203-4562-a846-24651131c40a": {
+      "id": "86637b56-7203-4562-a846-24651131c40a",
+      "name": "Thunar File Manager",
+      "exec": "thunar.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/org.xfce.thunar.svg",
+      "icon_name": "org.xfce.thunar",
+      "folderId": null,
+      "sortId": 29
+    },
+    "444207b4-f6d9-48a1-9f4f-6a745f1f2d80": {
+      "id": "444207b4-f6d9-48a1-9f4f-6a745f1f2d80",
+      "name": "ksnip",
+      "exec": "org.ksnip.ksnip.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/ksnip.svg",
+      "icon_name": "ksnip",
+      "folderId": null,
+      "sortId": 30
+    },
+    "23cbf0c4-7656-4a65-816b-19dd3580189c": {
+      "id": "23cbf0c4-7656-4a65-816b-19dd3580189c",
+      "name": "GParted",
+      "exec": "gparted.desktop",
+      "icon": "/usr/share/icons/hicolor/scalable/apps/gparted.svg",
+      "icon_name": "gparted",
+      "folderId": null,
+      "sortId": 31
+    },
+    "0327206e-2551-4215-834f-eaa9f274dd36": {
+      "id": "0327206e-2551-4215-834f-eaa9f274dd36",
+      "name": "System Monitor",
+      "exec": "YoUNiX-System-Monitor.desktop",
+      "icon": "/usr/share/icons/breeze-dark/apps/48/utilities-system-monitor.svg",
+      "icon_name": "utilities-system-monitor",
+      "folderId": null,
+      "sortId": 32
+    },
+    "0bae9263-d582-41fe-bce1-278fe14e2605": {
+      "id": "0bae9263-d582-41fe-bce1-278fe14e2605",
+      "name": "Mount Utility",
+      "exec": "YoUNiX-Mount-Utility.desktop",
+      "icon": "/usr/share/icons/breeze-dark/emblems/24/emblem-mounted.svg",
+      "icon_name": "emblem-mounted",
+      "folderId": null,
+      "sortId": 33
+    },
+    "043a8b7c-03cd-46c5-b036-8f096e23c659": {
+      "id": "043a8b7c-03cd-46c5-b036-8f096e23c659",
+      "name": "Control Center",
+      "exec": "YoUNiX-Control-Center.desktop",
+      "icon": "/usr/share/icons/breeze-dark/apps/48/systemsettings.svg",
+      "icon_name": "systemsettings",
+      "folderId": null,
+      "sortId": 34
+    },
+    "3666810a-37c4-4445-88cb-d4452d17269e": {
+      "id": "3666810a-37c4-4445-88cb-d4452d17269e",
+      "name": "Software Center",
+      "exec": "YoUNiX-Software-Center.desktop",
+      "icon": "/usr/share/icons/breeze-dark/preferences/32/yast-software-group.svg",
+      "icon_name": "yast-software-group",
+      "folderId": null,
+      "sortId": 35
+    },
+    "fd61e61a-e136-4d72-8322-f360de13ea1e": {
+      "id": "fd61e61a-e136-4d72-8322-f360de13ea1e",
+      "name": "TextEditor",
+      "exec": "text-edit.desktop",
+      "icon": "/usr/share/icons/breeze-dark/actions/24/typewriter.svg",
+      "icon_name": "typewriter",
+      "folderId": null,
+      "sortId": 36
+    },
+    "1294a9ba-849a-432e-9c92-fbd96485592b": {
+      "id": "1294a9ba-849a-432e-9c92-fbd96485592b",
+      "name": "Network Configuration",
+      "exec": "YoUNiX-Network-Configuration.desktop",
+      "icon": "/usr/share/icons/breeze-dark/apps/48/utilities-system-monitor.svg",
+      "icon_name": "utilities-system-monitor",
+      "folderId": null,
+      "sortId": 37
+    },
+    "165167b9-65ed-4458-a4a2-a47b2ef2fe37": {
+      "id": "165167b9-65ed-4458-a4a2-a47b2ef2fe37",
+      "name": "Weather",
+      "exec": "YoUNiX-Weather-Viewer.desktop",
+      "icon": "/usr/share/icons/breeze-dark/applets/48/weather-clouds.svg",
+      "icon_name": "weather-clouds",
+      "folderId": null,
+      "sortId": 38
+    },
+    "6cb00a9e-ee50-4baa-a190-89b56b22984b": {
+      "id": "6cb00a9e-ee50-4baa-a190-89b56b22984b",
+      "name": "Backup",
+      "exec": "YoUNiX-Backup.desktop",
+      "icon": "/usr/share/icons/breeze-dark/status/24/state-sync.svg",
+      "icon_name": "state-sync",
+      "folderId": null,
+      "sortId": 39
+    },
+    "fba01cfc-1947-4719-8c49-53c49654cd01": {
+      "id": "fba01cfc-1947-4719-8c49-53c49654cd01",
+      "name": "Time Machine",
+      "exec": "YoUNiX-Time-Machine.desktop",
+      "icon": "/usr/share/icons/breeze-dark/preferences/32/preferences-system-backup.svg",
+      "icon_name": "preferences-system-backup",
+      "folderId": null,
+      "sortId": 40
+    },
+    "19dec81b-f22c-4f2d-a892-519909d8608a": {
+      "id": "19dec81b-f22c-4f2d-a892-519909d8608a",
+      "name": "Language Configuration",
+      "exec": "YoUNiX-Languages.desktop",
+      "icon": "/usr/share/icons/breeze-dark/categories/32/applications-education-language.svg",
+      "icon_name": "applications-education-language",
+      "folderId": null,
+      "sortId": 41
+    },
+    "ea0a2422-2210-437d-8dd4-f90d200e6c25": {
+      "id": "ea0a2422-2210-437d-8dd4-f90d200e6c25",
+      "name": "System Update",
+      "exec": "YoUNiX-System-Update.desktop",
+      "icon": "/usr/share/icons/breeze-dark/actions/24/vcs-update-cvs-cervisia.svg",
+      "icon_name": "vcs-update-cvs-cervisia",
+      "folderId": null,
+      "sortId": 43
+    },
+    "e5e31618-5cd5-46c6-b78b-d9b1ebc26bf9": {
+      "id": "e5e31618-5cd5-46c6-b78b-d9b1ebc26bf9",
+      "name": "Calculator",
+      "exec": "YoUNiX-Calculator.desktop",
+      "icon": "/usr/share/icons/breeze-dark/apps/48/accessories-calculator.svg",
+      "icon_name": "accessories-calculator",
+      "folderId": null,
+      "sortId": 44
+    },
+    "0a988bee-33f7-4dcb-b82f-a63c12042112": {
+      "id": "0a988bee-33f7-4dcb-b82f-a63c12042112",
+      "name": "Calendar",
+      "exec": "YoUNiX-Calendar.desktop",
+      "icon": "/usr/share/icons/breeze-dark/mimetypes/64/x-office-calendar.svg",
+      "icon_name": "x-office-calendar",
+      "folderId": null,
+      "sortId": 45
+    },
+    "8e88885a-d389-4450-bef0-3079757be7e1": {
+      "id": "8e88885a-d389-4450-bef0-3079757be7e1",
+      "name": "Sound Configuration",
+      "exec": "YoUNiX-Sound-Configuration.desktop",
+      "icon": "/usr/share/icons/breeze-dark/devices/64/audio-card.svg",
+      "icon_name": "audio-card",
+      "folderId": null,
+      "sortId": 46
+    },
+    "df0bcba8-b10d-4a16-91b3-d1fdbae75457": {
+      "id": "df0bcba8-b10d-4a16-91b3-d1fdbae75457",
+      "name": "Obsidian",
+      "exec": "Obsidian-1.desktop",
+      "icon": "/home/user/Applications/.icons/obsidian.png",
+      "icon_name": "/home/user/Applications/.icons/obsidian.png",
+      "folderId": null,
+      "sortId": 47
+    },
+    "750b3657-1a9d-412a-99fd-4a92c2e1b861": {
+      "id": "750b3657-1a9d-412a-99fd-4a92c2e1b861",
+      "name": "Notes",
+      "exec": "YoUNiX-Notes.desktop",
+      "icon": "/usr/share/icons/breeze-dark/apps/48/knotes.svg",
+      "icon_name": "knotes",
+      "folderId": null,
+      "sortId": 48
+    },
+    "074e8058-d079-495f-8a4b-c9efa5578513": {
+      "id": "074e8058-d079-495f-8a4b-c9efa5578513",
+      "name": "Image Viewer",
+      "exec": "img-view.desktop",
+      "icon": "/usr/share/icons/AdwaitaLegacy/48x48/legacy/view-fullscreen.png",
+      "icon_name": "view-fullscreen",
+      "folderId": null,
+      "sortId": 49
+    },
+    "9fef84f6-839e-484e-a3db-397f9a673bac": {
+      "id": "9fef84f6-839e-484e-a3db-397f9a673bac",
+      "name": "Launcher",
+      "exec": "YoUNiX-Launcher.desktop",
+      "icon": "/usr/share/icons/breeze-dark/categories/32/applications-all.svg",
+      "icon_name": "applications-all",
+      "folderId": null,
+      "sortId": 50
+    },
+    "20c0e7ea-0a31-4011-b255-c57373a5e2e1": {
+      "id": "20c0e7ea-0a31-4011-b255-c57373a5e2e1",
+      "name": "Files",
+      "exec": "YoUNiX-Files.desktop",
+      "icon": "/usr/share/icons/breeze-dark/apps/64/system-file-manager.svg",
+      "icon_name": "system-file-manager",
+      "folderId": null,
+      "sortId": 51
+    }
+  },
+  "folders": {}
+}
