@@ -27,6 +27,7 @@ showHelp() {
     echo "Options:"
     echo "  -t    Open in terminal"
     echo "  -m    Output on/off status (for Waybar)"
+    echo "  -s    Set nightlight on/off (on|off)"
     echo "  -h    Show this help"
 }
 
@@ -150,17 +151,28 @@ displayMenu() {
 
 OPEN_TERMINAL=false
 WAYBAR_STATUS=false
+SET_STATE=""
 EXIT_TEXT="󰈆  Exit"
 
-while getopts "etmh" opt; do
+while getopts "etmhs:" opt; do
     case $opt in
         e) EXIT_TEXT="󰌍  Back" ;;
         t) OPEN_TERMINAL=true ;;
         m) WAYBAR_STATUS=true ;;
+        s) SET_STATE="$OPTARG" ;;
         h) showHelp; exit 0 ;;
         \?) echo "Invalid option. Use -h for help."; exit 1 ;;
     esac
 done
+
+if [[ -n "$SET_STATE" ]]; then
+    case "$SET_STATE" in
+        on) enableNightlight ;;
+        off) disableNightlight ;;
+        *) echo "Invalid state. Use 'on' or 'off'."; exit 1 ;;
+    esac
+    exit 0
+fi
 
 if [[ "$WAYBAR_STATUS" == true ]]; then
     isEnabled && echo "󰛨" || echo "󰹏"

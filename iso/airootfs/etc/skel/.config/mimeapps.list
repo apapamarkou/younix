@@ -29,3 +29,4 @@ application/x-desktop=org.xfce.mousepad.desktop;org.xfce.mousepad.desktop;
 video/x-matroska=org.avidemux.Avidemux.desktop;
 image/png=gimp.desktop;
 application/x-zerosize=org.xfce.mousepad.desktop;
+application/x-shellscript=text-edit.desktop;

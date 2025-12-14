@@ -1,0 +1,11 @@
+[Unit]
+Description=Nightlight (wlsunset)
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/wlsunset -l 37.984200 -L 23.735300
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target

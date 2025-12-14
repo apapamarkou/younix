@@ -1,0 +1,312 @@
+#!/usr/bin/env python3
+import sys
+import subprocess
+import json
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QSlider
+from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
+from PyQt6.QtGui import QFont, QIcon
+
+class WeatherWorker(QThread):
+    weather_updated = pyqtSignal(str)
+    
+    def run(self):
+        try:
+            result = subprocess.run(["yweather", "-m"], capture_output=True, text=True, timeout=10)
+            if result.returncode == 0:
+                self.weather_updated.emit(result.stdout.strip())
+            else:
+                self.weather_updated.emit("N/A")
+        except:
+            self.weather_updated.emit("N/A")
+
+class UpdatesWorker(QThread):
+    updates_updated = pyqtSignal(str)
+    
+    def run(self):
+        try:
+            result = subprocess.run(["ysystemupdate", "-m"], capture_output=True, text=True, timeout=10)
+            if result.returncode == 0:
+                data = json.loads(result.stdout.strip())
+                text = data.get("text", "").strip()
+                if text:
+                    self.updates_updated.emit(text)
+                else:
+                    self.updates_updated.emit("")
+            else:
+                self.updates_updated.emit("")
+        except:
+            self.updates_updated.emit("")
+
+class ControlCenter(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.init_ui()
+
+    def init_ui(self):
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint |
+            Qt.WindowType.Tool |
+            Qt.WindowType.WindowStaysOnTopHint
+        )
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setWindowTitle("YoUNiXButtons")
+        
+        self.setFixedSize(320, 400)
+        
+        # Main layout
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        
+        # Control buttons grid
+        grid = QGridLayout()
+        grid.setSpacing(10)
+        
+        # WiFi button
+        wifi_btn = self.create_control_button("📶", "WiFi")
+        wifi_btn.clicked.connect(lambda: subprocess.Popen(["nmtui"]))
+        grid.addWidget(wifi_btn, 0, 0)
+        
+        # Bluetooth button
+        bt_btn = self.create_control_button("🔵", "Bluetooth")
+        bt_btn.clicked.connect(lambda: subprocess.Popen(["blueman-manager"]))
+        grid.addWidget(bt_btn, 0, 1)
+        
+        # Settings button
+        settings_btn = self.create_control_button("⚙️", "Settings")
+        settings_btn.clicked.connect(lambda: subprocess.Popen(["xfce4-settings-manager"]))
+        grid.addWidget(settings_btn, 1, 0)
+        
+        # Calculator button
+        calc_btn = self.create_control_button("🧮", "Calculator")
+        calc_btn.clicked.connect(lambda: subprocess.Popen(["galculator"]))
+        grid.addWidget(calc_btn, 1, 1)
+        
+        layout.addLayout(grid)
+        
+        # Volume slider
+        vol_layout = QVBoxLayout()
+        vol_label = QLabel("🔊 Volume")
+        vol_label.setStyleSheet("color: white; font-size: 14px;")
+        vol_layout.addWidget(vol_label)
+        
+        self.volume_slider = QSlider(Qt.Orientation.Horizontal)
+        self.volume_slider.setRange(0, 100)
+        self.volume_slider.setValue(50)
+        self.volume_slider.valueChanged.connect(self.set_volume)
+        self.volume_slider.setStyleSheet("""
+            QSlider::groove:horizontal {
+                background: #404040;
+                height: 6px;
+                border-radius: 3px;
+            }
+            QSlider::handle:horizontal {
+                background: white;
+                width: 16px;
+                height: 16px;
+                border-radius: 8px;
+                margin: -5px 0;
+            }
+        """)
+        vol_layout.addWidget(self.volume_slider)
+        layout.addLayout(vol_layout)
+        
+        # Brightness slider
+        bright_layout = QVBoxLayout()
+        bright_label = QLabel("☀️ Brightness")
+        bright_label.setStyleSheet("color: white; font-size: 14px;")
+        bright_layout.addWidget(bright_label)
+        
+        self.brightness_slider = QSlider(Qt.Orientation.Horizontal)
+        self.brightness_slider.setRange(10, 100)
+        self.brightness_slider.setValue(80)
+        self.brightness_slider.valueChanged.connect(self.set_brightness)
+        self.brightness_slider.setStyleSheet(self.volume_slider.styleSheet())
+        bright_layout.addWidget(self.brightness_slider)
+        layout.addLayout(bright_layout)
+        
+        # Weather button (special layout with big font, no icon)
+        self.weather_btn = QPushButton("Loading...")
+        self.weather_btn.setFixedSize(120, 80)
+        self.weather_btn.clicked.connect(lambda: subprocess.Popen(["yweather", "-t"]))
+        self.weather_btn.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(60, 60, 60, 180);
+                border-radius: 10px;
+                border: none;
+                color: white;
+                font-size: 18px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: rgba(80, 80, 80, 200);
+            }
+            QPushButton:pressed {
+                background-color: rgba(100, 100, 100, 220);
+            }
+        """)
+        grid.addWidget(self.weather_btn, 2, 0)
+        
+        # Nightlight button
+        
+        self.nightlight_btn = self.create_control_button("🌙", "Nightlight")
+        self.nightlight_btn.clicked.connect(self.toggle_nightlight)
+        grid.addWidget(self.nightlight_btn, 2, 1)
+        
+        # Updates widget
+        updates_layout = QHBoxLayout()
+        updates_label = QLabel("💻 Updates available")
+        updates_label.setStyleSheet("color: white; font-size: 14px;")
+        updates_layout.addWidget(updates_label)
+        
+        self.updates_info = QLabel("")
+        self.updates_info.setStyleSheet("color: #ccc; font-size: 16px;")
+        self.updates_info.setAlignment(Qt.AlignmentFlag.AlignRight)
+        updates_layout.addWidget(self.updates_info)
+        layout.addLayout(updates_layout)
+        
+        self.setLayout(layout)
+        
+        # Update nightlight status immediately
+        self.update_nightlight_status()
+        
+        # Start weather and updates loading in background
+        QTimer.singleShot(100, self.update_weather)
+        QTimer.singleShot(200, self.update_updates)
+        
+        # Style the widget
+        self.setStyleSheet("""
+            QWidget {
+                background-color: rgba(40, 40, 40, 255);
+                border-radius: 15px;
+            }
+        """)
+        
+        # Position at top-right corner
+        screen = QApplication.primaryScreen().geometry()
+        self.move(screen.width() - self.width() - 20, 60)
+        
+        # Timer to check if window is active
+        self.focus_timer = QTimer()
+        self.focus_timer.timeout.connect(self.check_focus)
+        self.focus_timer.start(500)
+        
+        # Timer to update weather periodically
+        self.weather_timer = QTimer()
+        self.weather_timer.timeout.connect(self.update_weather)
+        self.weather_timer.start(300000)  # Update every 5 minutes
+        
+        # Timer to update system updates periodically
+        self.updates_timer = QTimer()
+        self.updates_timer.timeout.connect(self.update_updates)
+        self.updates_timer.start(600000)  # Update every 10 minutes
+        
+        # Set focus to make it active initially
+        self.setFocus()
+        self.activateWindow()
+        
+    def create_control_button(self, icon, text):
+        btn = QPushButton()
+        btn.setFixedSize(120, 80)
+        
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        icon_label = QLabel(icon)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon_label.setStyleSheet("font-size: 24px;")
+        
+        text_label = QLabel(text)
+        text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        text_label.setStyleSheet("color: white; font-size: 12px;")
+        
+        layout.addWidget(icon_label)
+        layout.addWidget(text_label)
+        btn.setLayout(layout)
+        
+        btn.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(60, 60, 60, 180);
+                border-radius: 10px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: rgba(80, 80, 80, 200);
+            }
+            QPushButton:pressed {
+                background-color: rgba(100, 100, 100, 220);
+            }
+        """)
+        
+        return btn
+    
+    def set_volume(self, value):
+        subprocess.run(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{value}%"])
+    
+    def set_brightness(self, value):
+        subprocess.run(["brightnessctl", "set", f"{value}%"])
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            QApplication.quit()
+    
+    def check_focus(self):
+        if not self.isActiveWindow():
+            QApplication.quit()
+    
+    def update_weather(self):
+        if hasattr(self, 'weather_worker') and self.weather_worker.isRunning():
+            return
+        
+        self.weather_worker = WeatherWorker()
+        self.weather_worker.weather_updated.connect(self.update_weather_button)
+        self.weather_worker.start()
+    
+    def update_nightlight_status(self):
+        try:
+            result = subprocess.run(["ycnightlight", "-m"], capture_output=True, text=True, timeout=2)
+            if result.returncode == 0:
+                icon = result.stdout.strip()
+                # Update nightlight button text
+                for child in self.nightlight_btn.findChildren(QLabel):
+                    if "Nightlight" in child.text():
+                        status = "ON" if icon == "󰛨" else "OFF"
+                        child.setText(f"Night {status}")
+                        break
+                self.nightlight_enabled = icon == "󰛨"
+        except:
+            # Reset nightlight button text
+            for child in self.nightlight_btn.findChildren(QLabel):
+                if "Night" in child.text() or "Nightlight" in child.text():
+                    child.setText("Night OFF")
+                    break
+            self.nightlight_enabled = False
+    
+    def toggle_nightlight(self):
+        try:
+            if hasattr(self, 'nightlight_enabled') and self.nightlight_enabled:
+                subprocess.run(["ycnightlight", "-s", "off"])
+            else:
+                subprocess.run(["ycnightlight", "-s", "on"])
+            # Update status after toggle
+            QTimer.singleShot(1000, self.update_nightlight_status)
+        except:
+            pass
+    
+    def update_updates(self):
+        if hasattr(self, 'updates_worker') and self.updates_worker.isRunning():
+            return
+        
+        self.updates_worker = UpdatesWorker()
+        self.updates_worker.updates_updated.connect(self.updates_info.setText)
+        self.updates_worker.start()
+    
+    def update_weather_button(self, weather_text):
+        # Update weather button text directly
+        self.weather_btn.setText(weather_text[:8])  # Truncate for button size
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    cc = ControlCenter()
+    cc.show()
+    sys.exit(app.exec())

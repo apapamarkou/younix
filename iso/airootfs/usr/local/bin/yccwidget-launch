@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# --- Ορισμοί ---
+# Πλάτος παραθύρου (από self.setFixedSize(320, 400))
+WINDOW_WIDTH=320
+MARGIN=20
+Y_POS=60
+TARGET_TITLE="YoUNiXButtons"
+
+# 1. Ξεκινάει την εφαρμογή στο background (Πρέπει να βάλετε το σωστό path)
+yccwidget &
+
+# Αποθηκεύουμε το PID του script
+CC_PID=$!
+
+# 2. Περιμένουμε για να γίνει map το παράθυρο (2.5 δευτερόλεπτα)
+sleep 0.3
+
+# 3. Βρίσκει το πλάτος της κύριας οθόνης (χρειάζεται jq)
+# (Αν δεν έχετε jq, θα πρέπει να το εγκαταστήσετε ή να χρησιμοποιήσετε την απόλυτη τιμή 1920)
+SCREEN_WIDTH=$(hyprctl monitors -j | jq '.[0].width')
+
+# 4. Υπολογισμός Θέσης X: (Πλάτος Οθόνης - Πλάτος Παραθύρου - Περιθώριο)
+X_POS=$((SCREEN_WIDTH - WINDOW_WIDTH - MARGIN))
+
+# 5. Μετακίνηση του παραθύρου με το σωστό Class Name
+hyprctl dispatch movewindowpixel exact "$X_POS" "$Y_POS", title:"$TARGET_TITLE"

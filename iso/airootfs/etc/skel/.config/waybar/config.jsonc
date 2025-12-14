@@ -11,8 +11,8 @@
   "modules-center": [],
   "modules-right": [
     "custom/modes",
-    "custom/drives",
     "custom/weather",
+    "custom/drives",
     "custom/nightlight",
     "custom/updates",
     "network",
@@ -26,8 +26,7 @@
   ],
   "custom/launcher": {
     "exec": "echo '󱓞'",
-    "interval": 0,
-    "on-click": "ylauncher",
+    "on-click": "yccwidget",
     "on-click-right": "yapps -t",
     "tooltip": true,
     "tooltip-format": "\n    left click: full screen launcher \n\n    right click: TUI launcher \n"
