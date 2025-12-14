@@ -27,7 +27,7 @@ show_help() {
 }
 
 open_terminal() {
-    flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=55 --lines=17 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME
+    flock -n $LOCK_DIR/$SCRIPT_NAME.lock terminal --columns=55 --class=$SCRIPT_NAME --lines=17 --title="$FLOATING_PREFIX $TITLE" $SCRIPT_NAME
 }
 
 display_menu() {

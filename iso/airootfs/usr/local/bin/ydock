@@ -305,10 +305,11 @@ class DockIcon(Gtk.Button):
                     # Create submenu for window operations
                     submenu = Gtk.Menu()
                     
-                    # Focus
-                    focus_item = Gtk.MenuItem(label="Focus")
-                    focus_item.connect("activate", lambda w, addr=window['address']: self.focus_window(addr))
-                    submenu.append(focus_item)
+                    # Focus (only if not hidden)
+                    if not is_hidden:
+                        focus_item = Gtk.MenuItem(label="Focus")
+                        focus_item.connect("activate", lambda w, addr=window['address']: self.focus_window(addr))
+                        submenu.append(focus_item)
                     
                     # Hide/Show
                     if is_hidden:

@@ -17,6 +17,7 @@
 COLS=80
 LINES=24
 TITLE=""
+CLASS=""
 EXECUTABLE=""
 
 # Parse arguments
@@ -32,6 +33,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --title=*)
             TITLE="${1#*=}"
+            shift
+            ;;
+        --class=*)
+            CLASS="${1#*=}"
             shift
             ;;
         --)
@@ -56,15 +61,16 @@ case "$TER" in
     *alacritty*)
 	exec alacritty \
 	    ${TITLE:+--title="$TITLE"} \
+	    ${CLASS:+--class="$CLASS"} \
 	    -o window.dimensions.columns=$COLS \
 	    -o window.dimensions.lines=$LINES \
 	    -e bash -c "${EXECUTABLE:+$EXECUTABLE $ARGS}; exec bash"
         ;;
     *xfce4*)
-        exec xfce4-terminal --hide-scrollbar --hide-menubar --geometry=${COLS}x${LINES} ${TITLE:+--title="$TITLE"} ${EXECUTABLE:+-x $EXECUTABLE $ARGS}
+        exec xfce4-terminal --hide-scrollbar --hide-menubar --geometry=${COLS}x${LINES} ${TITLE:+--title="$TITLE"} ${CLASS:+--class="$CLASS"} ${EXECUTABLE:+-x $EXECUTABLE $ARGS}
         ;;
     *foot*)
-        exec foot ${TITLE:+--title="$TITLE"} --override=initial-window-size-chars=${COLS}x${LINES} ${EXECUTABLE:+-- $EXECUTABLE $ARGS}
+        exec foot ${TITLE:+--title="$TITLE"} ${CLASS:+--app-id="$CLASS"} --override=initial-window-size-chars=${COLS}x${LINES} ${EXECUTABLE:+-- $EXECUTABLE $ARGS}
         ;;
     *konsole*)
         exec konsole --hide-menubar --hide-tabbar ${TITLE:+--title="$TITLE"} --geometry ${COLS}x${LINES} ${EXECUTABLE:+-e $EXECUTABLE $ARGS}
@@ -80,6 +86,7 @@ case "$TER" in
         ;;
     *xfce4-terminal*)
         exec xfce4terminal --title=${TITLE:+-title "$TITLE"} \
+		${CLASS:+--class="$CLASS"} \
 		--disable-server \
         	--geometry=${COLS}x${LINES} \
         	--hide-menubar \
@@ -90,6 +97,7 @@ case "$TER" in
 
     *kitty*)
         exec kitty ${TITLE:+--title "$TITLE"} \
+            ${CLASS:+--class="$CLASS"} \
             --override=initial_window_width=${COLS}c \
             --override=initial_window_height=${LINES}c \
             $EXECUTABLE $ARGS

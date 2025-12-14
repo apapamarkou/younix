@@ -17,6 +17,9 @@
 
 SCRIPT_NAME=$(basename "$0")
 TITLE="System Update"
+CACHE_FILE="/tmp/younix-updates.cache"
+CACHE_TTL=1200
+
 
 showHelp() {
     echo "$DISTRO_NAME $TITLE"
@@ -39,16 +42,37 @@ AUR_UPDATES=0
 FLATPAK_UPDATES=0
 SNAP_UPDATES=0
 
+loadCache() {
+    if [ -f "$CACHE_FILE" ] && [ $(($(date +%s) - $(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0))) -lt $CACHE_TTL ]; then
+        source "$CACHE_FILE"
+        return 0
+    fi
+    return 1
+}
+
+saveCache() {
+    cat > "$CACHE_FILE" << EOF
+REPO_UPDATES=$REPO_UPDATES
+AUR_UPDATES=$AUR_UPDATES
+FLATPAK_UPDATES=$FLATPAK_UPDATES
+SNAP_UPDATES=$SNAP_UPDATES
+EOF
+}
+
 #Check is there are any repo updates and show the number of packages
 checkRepos() {
-    # REPO_UPDATES=$(pacman -Sup --noconfirm 2>/dev/null | grep -c "\.pkg\.tar")
-    # REPO_UPDATES=$(pacman -Sup 2>/dev/null | awk 'NF' | grep -v ':: Starting full system upgrade' | grep -v ' nothing to do' | wc -l)
-    REPO_UPDATES=$(pacman -Qu 2>/dev/null | wc -l)
-    # if count is 0 then yprint --green "No updates available in repos"
-    if [ $REPO_UPDATES -eq 0 ]; then
-        echo "No updates available $REPO_UPDATES"
+    if ! command -v checkupdates &> /dev/null; then
+        echo "Install pacman-contrib"
+        REPO_UPDATES=0
+        return
+    fi
+
+    REPO_UPDATES=$(checkupdates 2>/dev/null | wc -l)
+
+    if [ "$REPO_UPDATES" -eq 0 ]; then
+        echo "No updates available"
     else
-        echo "Update $REPO_UPDATES Arch Repositoriy packages"
+        echo "Update $REPO_UPDATES Arch Repository packages"
     fi
 }
 
@@ -133,7 +157,7 @@ displayMenu(){
         
         case "$choice" in
             *"Update All"*) runInTerminal updateAll ;;
-            *"Arch Repositoriy"*) runInTerminal updateRepos ;;
+            *"Arch Repository"*) runInTerminal updateRepos ;;
             *"Arch User Repository"*) runInTerminal updateAUR ;;
             *"Install Arch User"*) runInTerminal InstallYay ;;
             *"flatpak packages"*) runInTerminal updateFlatpak ;;
@@ -176,22 +200,20 @@ if [ -n "$SET_STATE" ]; then
 fi
 
 if [ "$MONITOR_MODE" = true ]; then
-    checkRepos > /dev/null
-    checkAUR > /dev/null
-    checkFlatpak > /dev/null
-    checkSnap > /dev/null
+    if ! loadCache; then
+        checkRepos > /dev/null
+        checkAUR > /dev/null
+        checkFlatpak > /dev/null
+        checkSnap > /dev/null
+        saveCache
+    fi
     
-    total_updates=$((REPO_UPDATES + AUR_UPDATES + FLATPAK_UPDATES + SNAP_UPDATES))
-    
-    if [ $total_updates -gt 0 ]; then
-        echo " $total_updates"  # Updates available icon + number
-        ynotify "System Updates Available" \
-                "Repository: $REPO_UPDATES\nAUR: $AUR_UPDATES\nFlatpak: $FLATPAK_UPDATES\nSnap: $SNAP_UPDATES\n\nUse the   icon in top bar.\nLeft Click to open $DISTRO_NAME update\nRight click to open $DISTRO_NAME Software\n"  \
-                -t 12000 \
-                -l "$SCRIPT_NAME -t" \
-                -p "Open Updater"
+    total=$((REPO_UPDATES + AUR_UPDATES + FLATPAK_UPDATES + SNAP_UPDATES))
+
+    if [ "$total" -gt 0 ]; then
+        echo "{\"text\":\" $total\",\"tooltip\":\"\n\n    left click: update manager \n\n    right click: software manager \n\n Repo.....: $REPO_UPDATES \n\n AUR......: $AUR_UPDATES \n\n Flatpak..: $FLATPAK_UPDATES \n\n Snap.....: $SNAP_UPDATES \n\n\"}"
     else
-        echo ""  # No updates, empty output
+        echo "{\"text\":\"\",\"tooltip\":\"System up to date\"}"
     fi
     exit 0
 fi

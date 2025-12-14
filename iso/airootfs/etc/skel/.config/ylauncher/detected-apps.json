@@ -198,15 +198,6 @@
       "folderId": null,
       "sortId": 21
     },
-    "32d8b055-11ee-46d0-ba19-afbf67f70c59": {
-      "id": "32d8b055-11ee-46d0-ba19-afbf67f70c59",
-      "name": "Chromium",
-      "exec": "chromium.desktop",
-      "icon": "/usr/share/icons/hicolor/256x256/apps/chromium.png",
-      "icon_name": "chromium",
-      "folderId": null,
-      "sortId": 22
-    },
     "cde72ce1-a2b8-4194-b251-4a5d840085f3": {
       "id": "cde72ce1-a2b8-4194-b251-4a5d840085f3",
       "name": "nnn",
@@ -342,15 +333,6 @@
       "folderId": null,
       "sortId": 37
     },
-    "165167b9-65ed-4458-a4a2-a47b2ef2fe37": {
-      "id": "165167b9-65ed-4458-a4a2-a47b2ef2fe37",
-      "name": "Weather",
-      "exec": "YoUNiX-Weather-Viewer.desktop",
-      "icon": "/usr/share/icons/breeze-dark/applets/48/weather-clouds.svg",
-      "icon_name": "weather-clouds",
-      "folderId": null,
-      "sortId": 38
-    },
     "6cb00a9e-ee50-4baa-a190-89b56b22984b": {
       "id": "6cb00a9e-ee50-4baa-a190-89b56b22984b",
       "name": "Backup",
@@ -458,6 +440,33 @@
       "icon_name": "system-file-manager",
       "folderId": null,
       "sortId": 51
+    },
+    "e5a131d8-78c4-4ccf-94aa-457a8588a3a9": {
+      "id": "e5a131d8-78c4-4ccf-94aa-457a8588a3a9",
+      "name": "Chromium",
+      "exec": "chromium.desktop",
+      "icon": "/usr/share/icons/hicolor/256x256/apps/chromium.png",
+      "icon_name": "chromium",
+      "folderId": null,
+      "sortId": 52
+    },
+    "cee6f351-5a0e-4b2d-80c3-9f2813ad6185": {
+      "id": "cee6f351-5a0e-4b2d-80c3-9f2813ad6185",
+      "name": "Weather",
+      "exec": "YoUNiX-Weather-Viewer.desktop",
+      "icon": "/usr/share/icons/breeze-dark/applets/48/weather-clouds.svg",
+      "icon_name": "weather-clouds",
+      "folderId": null,
+      "sortId": 53
+    },
+    "c6b75adf-bf12-4fdd-8b8a-59b7af3a5566": {
+      "id": "c6b75adf-bf12-4fdd-8b8a-59b7af3a5566",
+      "name": "PDF Viewer (Chromium)",
+      "exec": "PDF Viewer.desktop",
+      "icon": "/usr/share/icons/breeze-dark/mimetypes/64/application-pdf.svg",
+      "icon_name": "application-pdf",
+      "folderId": null,
+      "sortId": 54
     }
   },
   "folders": {}
