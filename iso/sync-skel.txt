@@ -36,7 +36,12 @@ Applications/DropYourAppimagesHere
 Downloads
 Documents/PDF_Docs
 Documents/TXT_Docs
-/Pictures/Wallpapers/DropYourWallpapersHere
+Documents/YourDocuments
+Downloads/YourDownloads
+Pictures/Wallpapers/DropYourWallpapersHere
+Videos/YourVideos
+Pictures/YourPictures
+
 .bash_profile
 .bashrc
 .gtkrc-2.0
