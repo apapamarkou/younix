@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# ~/.local/bin/xdg-open-custom
+
+FILE="$1"
+
+# Βασικός έλεγχος
+if [[ ! -e "$FILE" ]]; then
+    echo "File not found: $FILE"
+    exit 1
+fi
+
+# MIME type
+MIME=$(file --mime-type -b "$FILE")
+
+# Διάβασε το mimeapps.list
+APP=$(awk -F= -v mime="$MIME" '
+    /^\[Default Applications\]/ { in_section=1; next }
+    /^\[/ { in_section=0 }
+    in_section && $1==mime { print $2; exit }
+' ~/.config/mimeapps.list | cut -d';' -f1)
+
+# Αν βρέθηκε desktop file, πάρε το Exec
+if [[ -n "$APP" ]]; then
+    DESKTOP=$(find ~/.local/share/applications /usr/share/applications -name "$APP" 2>/dev/null | head -n1)
+    if [[ -f "$DESKTOP" ]]; then
+        CMD=$(awk -F= '/^Exec=/ {print $2; exit}' "$DESKTOP")
+        # Καθάρισε placeholders
+        CMD=${CMD//%U/}
+        CMD=${CMD//%u/}
+        CMD=${CMD//%F/}
+        CMD=${CMD//%f/}
+        CMD=${CMD//%i/}
+        CMD=${CMD//%c/}
+        CMD=${CMD//%k/}
+        # Εκτέλεση
+        $CMD "$FILE" &
+        exit 0
+    fi
+fi
+
+# Fallback
+echo "No association found, fallback to default"
+gio open "$FILE"
