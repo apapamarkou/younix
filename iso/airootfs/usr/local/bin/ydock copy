@@ -78,6 +78,10 @@ class DockIcon(Gtk.Button):
         self.connect("clicked", self.on_left_click)
         self.connect("button-press-event", self.on_button_press)
 
+        # Enable file drop support
+        self.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
+        self.drag_dest_add_uri_targets()
+        self.connect("drag-data-received", self.on_file_drop)
         
         # Enable drag and drop only for pinned apps
         if self.desktop_file in dock.config['pinned_apps']:
@@ -419,6 +423,21 @@ class DockIcon(Gtk.Button):
             dock.unpin_app(drag_source.desktop_file)
 
         dock.drag_source = None
+    
+    def on_file_drop(self, widget, context, x, y, data, info, time):
+        """Handle file drops on app icons"""
+        uris = data.get_uris()
+        if uris and self.app_info.get('exec'):
+            files = []
+            for uri in uris:
+                if uri.startswith('file://'):
+                    files.append(uri[7:])
+            
+            if files:
+                cmd = ['gtk-launch', self.desktop_file] + files
+                subprocess.Popen(cmd)
+        
+        Gtk.drag_finish(context, True, False, time)
 
 
 
@@ -462,6 +481,11 @@ class TrashIcon(Gtk.Button):
         
         box.show_all()
         self.add(box)
+        
+        # Enable file drop support for trash
+        self.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.MOVE)
+        self.drag_dest_add_uri_targets()
+        self.connect("drag-data-received", self.on_file_drop)
     
     def on_left_click(self, button):
         subprocess.Popen(["thunar", "trash://"], stderr=subprocess.DEVNULL)
@@ -507,6 +531,17 @@ class TrashIcon(Gtk.Button):
         """Handle trash directory changes"""
         if event_type in [Gio.FileMonitorEvent.CREATED, Gio.FileMonitorEvent.DELETED]:
             GLib.idle_add(self.update_icon)
+    
+    def on_file_drop(self, widget, context, x, y, data, info, time):
+        """Handle file drops on trash icon"""
+        uris = data.get_uris()
+        if uris:
+            for uri in uris:
+                if uri.startswith('file://'):
+                    file_path = uri[7:]
+                    subprocess.Popen(['gio', 'trash', file_path])
+        
+        Gtk.drag_finish(context, True, False, time)
 
 class FolderMenuItem(Gtk.MenuItem):
     def __init__(self, folder_path, dock):
@@ -589,6 +624,11 @@ class FolderIcon(Gtk.Button):
         
         self.connect("clicked", self.on_left_click)
         self.connect("button-press-event", self.on_button_press)
+        
+        # Enable file drop support for folders
+        self.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.COPY)
+        self.drag_dest_add_uri_targets()
+        self.connect("drag-data-received", self.on_file_drop)
     
     def on_left_click(self, button):
         self.show_folder_contents()
@@ -620,7 +660,7 @@ class FolderIcon(Gtk.Button):
                     hbox.pack_start(label, True, True, 0)
                     
                     item_menu.add(hbox)
-                    item_menu.connect("activate", lambda w, path=str(item): subprocess.Popen(["xdg-open", path]))
+                    item_menu.connect("activate", lambda w, path=str(item): subprocess.Popen(["xdg-open-younix", path]))
                     menu.append(item_menu)
         except:
             pass
@@ -642,6 +682,17 @@ class FolderIcon(Gtk.Button):
         
         menu.show_all()
         menu.popup(None, None, None, None, event.button, event.time)
+    
+    def on_file_drop(self, widget, context, x, y, data, info, time):
+        """Handle file drops on folder icons"""
+        uris = data.get_uris()
+        if uris:
+            for uri in uris:
+                if uri.startswith('file://'):
+                    source_path = uri[7:]
+                    subprocess.Popen(['cp', '-r', source_path, self.folder_path])
+        
+        Gtk.drag_finish(context, True, False, time)
 
 class DockSeparator(Gtk.EventBox):
     def __init__(self, dock):

@@ -402,6 +402,11 @@ class DockIcon(Gtk.Button):
         if not drag_source:
             return
 
+        # Restore all icons to full opacity immediately
+        for child in dock.inner.get_children():
+            if hasattr(child, 'set_opacity'):
+                child.set_opacity(1.0)
+
         # Get current pointer position on screen
         display = Gdk.Display.get_default()
         seat = display.get_default_seat()
@@ -884,11 +889,11 @@ class DockWindow(Gtk.Window):
         Gtk.drag_finish(context, True, False, time)
     
     def animate_icons_to_full_opacity(self):
-        """Animate all icons from 0.7 to 1.0 opacity"""
+        """Animate all icons from 0.5 to 1.0 opacity"""
         def fade_step(step_count=[0]):
             step_count[0] += 1
             progress = step_count[0] / 10.0  # 10 steps
-            opacity = 0.7 + (0.3 * progress)  # 0.7 → 1.0
+            opacity = 0.5 + (0.5 * progress)  # 0.5 → 1.0
             
             for child in self.inner.get_children():
                 if hasattr(child, 'set_opacity'):

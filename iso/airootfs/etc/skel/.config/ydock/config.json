@@ -3,8 +3,8 @@
   "pinned_apps": [
     "chromium.desktop",
     "code.desktop",
-    "thunar.desktop",
     "org.xfce.mousepad.desktop",
+    "thunar.desktop",
     "xfce4-terminal.desktop"
   ],
   "folders": [
