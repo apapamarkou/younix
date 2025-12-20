@@ -1,0 +1,60 @@
+{
+  "window": {
+    "width": 468,
+    "height": 455
+  },
+  "plugins": {
+    "enabled": [
+      "Brightness",
+      "Settings",
+      "Volume",
+      "Nightlight",
+      "Network",
+      "Weather",
+      "Updates"
+    ],
+    "positions": {
+      "Brightness": {
+        "row": 2,
+        "col": 0
+      },
+      "Settings": {
+        "row": 4,
+        "col": 2
+      },
+      "Updates": {
+        "row": 0,
+        "col": 4
+      },
+      "Volume": {
+        "row": 2,
+        "col": 2
+      },
+      "Nightlight": {
+        "row": 2,
+        "col": 4
+      },
+      "Network": {
+        "row": 4,
+        "col": 0
+      },
+      "Weather": {
+        "row": 0,
+        "col": 0
+      },
+      "Bluetooth": {
+        "row": 6,
+        "col": 0
+      }
+    },
+    "sizes": {
+      "Updates": "Normal",
+      "Bluetooth": "Normal",
+      "Weather": "Large",
+      "Brightness": "Default",
+      "Volume": "Normal",
+      "Settings": "Large",
+      "Network": "Normal"
+    }
+  }
+}

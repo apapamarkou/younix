@@ -14,6 +14,7 @@
 .config/gtk-3.0 
 .config/gtk-4.0
 .config/ylock/info
+.config/ywidgets
 
 .local/bin/appimage-integrator
 .local/share/applications/img-view.desktop
