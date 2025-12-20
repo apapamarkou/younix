@@ -467,6 +467,15 @@
       "icon_name": "application-pdf",
       "folderId": null,
       "sortId": 54
+    },
+    "445c65c5-8d7b-4d52-9327-0efc4abe2d57": {
+      "id": "445c65c5-8d7b-4d52-9327-0efc4abe2d57",
+      "name": "YWidgets",
+      "exec": "ywidgets.desktop",
+      "icon": "/usr/share/icons/AdwaitaLegacy/48x48/legacy/applications-utilities.png",
+      "icon_name": "applications-utilities",
+      "folderId": null,
+      "sortId": 55
     }
   },
   "folders": {}

@@ -19,6 +19,8 @@ SCRIPT_NAME=$(basename "$0")
 TITLE="Weather Viewer"
 CITIES_FILE="$HOME/.config/yweather/cities.conf"
 VIEW_OPTIONS_FILE="$HOME/.config/yweather/view_options.conf"
+CACHE_FILE="/tmp/younix-weather.cache"
+CACHE_TTL=10000
 
 showHelp() {
     echo "$DISTRO_NAME $TITLE"
@@ -78,13 +80,37 @@ set_default_city() {
     sed -i "1i$city" "$CITIES_FILE"
 }
 
+# Check cache validity
+load_cache() {
+    if [[ -f "$CACHE_FILE" ]] && [[ $(($(date +%s) - $(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0))) -lt $CACHE_TTL ]]; then
+        cat "$CACHE_FILE"
+        return 0
+    fi
+    return 1
+}
+
+# Save to cache
+save_cache() {
+    echo "$1" > "$CACHE_FILE"
+}
+
 # Mini view for polybar
 mini_view() {
     init_cities
     [[ ! -f "$CITIES_FILE" ]] && exit 1
     
+    # Try cache first
+    if cached_data=$(load_cache); then
+        echo "$cached_data"
+        return
+    fi
+    
     default_city=$(head -n1 "$CITIES_FILE")
-    curl -s "wttr.in/$default_city?format=%c+%t" 2>/dev/null || echo "N/A"
+    weather_data=$(curl -s "wttr.in/$default_city?format=%c+%t" 2>/dev/null || echo "N/A")
+    
+    # Save to cache
+    save_cache "$weather_data"
+    echo "$weather_data"
 }
 
 # Viewer options

@@ -25,8 +25,8 @@
     "custom/power"
   ],
   "custom/launcher": {
-    "exec": "echo '󱓞'",
-    "on-click": "yccwidget",
+    "exec": "echo '󰬠'",
+    "on-click": "ywidgets-toggle",
     "on-click-right": "yapps -t",
     "tooltip": true,
     "tooltip-format": "\n    left click: full screen launcher \n\n    right click: TUI launcher \n"

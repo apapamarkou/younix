@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+import sys
+import time
+from PyQt6.QtCore import QCoreApplication
+from PyQt6.QtNetwork import QLocalSocket
+
+app = QCoreApplication(sys.argv)
+socket = QLocalSocket()
+socket.connectToServer("ywidgets_daemon")
+if socket.waitForConnected(1000):
+    socket.write(b"toggle")
+    socket.waitForBytesWritten()
+    socket.disconnectFromServer()
+else:
+    # Start daemon if not running
+    import subprocess
+    subprocess.Popen(["/home/user/.local/bin/ywidgets/main.py"])
+    # Wait for daemon to start and try again
+    time.sleep(1)
+    socket.connectToServer("ywidgets_daemon")
+    if socket.waitForConnected(2000):
+        socket.write(b"toggle")
+        socket.waitForBytesWritten()
+        socket.disconnectFromServer()
