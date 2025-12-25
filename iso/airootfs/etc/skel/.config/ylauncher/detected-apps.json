@@ -225,15 +225,6 @@
       "folderId": null,
       "sortId": 25
     },
-    "e9d9b526-db34-45cd-8596-7ee43ff976e3": {
-      "id": "e9d9b526-db34-45cd-8596-7ee43ff976e3",
-      "name": "Visual Studio Code",
-      "exec": "code.desktop",
-      "icon": "/usr/share/pixmaps/visual-studio-code.png",
-      "icon_name": "visual-studio-code",
-      "folderId": null,
-      "sortId": 26
-    },
     "5ac4c512-5755-4b7f-81a4-b6227814377d": {
       "id": "5ac4c512-5755-4b7f-81a4-b6227814377d",
       "name": "Mousepad",
@@ -441,15 +432,6 @@
       "folderId": null,
       "sortId": 51
     },
-    "e5a131d8-78c4-4ccf-94aa-457a8588a3a9": {
-      "id": "e5a131d8-78c4-4ccf-94aa-457a8588a3a9",
-      "name": "Chromium",
-      "exec": "chromium.desktop",
-      "icon": "/usr/share/icons/hicolor/256x256/apps/chromium.png",
-      "icon_name": "chromium",
-      "folderId": null,
-      "sortId": 52
-    },
     "cee6f351-5a0e-4b2d-80c3-9f2813ad6185": {
       "id": "cee6f351-5a0e-4b2d-80c3-9f2813ad6185",
       "name": "Weather",
@@ -476,6 +458,15 @@
       "icon_name": "applications-utilities",
       "folderId": null,
       "sortId": 55
+    },
+    "48e89ced-95e5-40c6-8e50-7648771fb6dc": {
+      "id": "48e89ced-95e5-40c6-8e50-7648771fb6dc",
+      "name": "Chromium",
+      "exec": "chromium.desktop",
+      "icon": "/usr/share/icons/hicolor/256x256/apps/chromium.png",
+      "icon_name": "chromium",
+      "folderId": null,
+      "sortId": 56
     }
   },
   "folders": {}

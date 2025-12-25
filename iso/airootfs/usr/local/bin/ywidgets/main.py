@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QGr
 from PyQt6.QtCore import Qt, QTimer, QSize, QPoint, QPointF
 from PyQt6.QtGui import QIcon, QPainter, QPen, QColor, QMouseEvent
 from PyQt6.QtNetwork import QLocalServer, QLocalSocket
-from plugin_manager import load_plugins, get_size_span
+from plugin_manager import load_plugins, get_size_span, PluginSize, clear_plugin_cache
 from config import Config
 
 class OverlayWidget(QWidget):
@@ -72,6 +72,14 @@ class DraggablePlugin(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(plugin)
         self.setLayout(layout)
+        
+        # Connect plugin update signals to repaint
+        if hasattr(plugin, 'update'):
+            original_update = plugin.update
+            def update_with_repaint():
+                original_update()
+                self.update()
+            plugin.update = update_with_repaint
         
         # Set initial edit mode state
         self.refresh_edit_mode()
@@ -141,6 +149,10 @@ class ControlCenter(QWidget):
         super().__init__()
         self.edit_mode = False   # Νέα κατάσταση
         self.config = Config()
+        
+        # Load plugins once and cache them
+        self.plugins = load_plugins(self)
+        
         self.init_ui()
 
     def get_plugin_under_cursor(self, pos):
@@ -167,8 +179,7 @@ class ControlCenter(QWidget):
                 rspan, cspan = get_size_span(size)
             else:
                 # Get default span from plugin
-                plugins = load_plugins(self)
-                for plugin in plugins:
+                for plugin in self.plugins:
                     if getattr(plugin, "plugin_name", "") == plugin_name:
                         rspan, cspan = getattr(plugin, "grid_span", (2, 2))
                         break
@@ -268,7 +279,9 @@ class ControlCenter(QWidget):
         shutdown_btn.clicked.connect(lambda: subprocess.Popen(["systemctl", "poweroff"]))
         power_layout.addWidget(shutdown_btn)
         
-        edit_btn = QPushButton("Edit")
+        edit_btn = QPushButton()
+        edit_btn.setIcon(QIcon.fromTheme("document-edit"))
+        edit_btn.setIconSize(QSize(24, 24))
         edit_btn.setCheckable(True)
         edit_btn.setFixedSize(50, 50)
         edit_btn.setStyleSheet("""
@@ -330,10 +343,14 @@ class ControlCenter(QWidget):
         # Setup socket server for daemon communication FIRST
         self.server = QLocalServer()
         self.server.newConnection.connect(self.handle_client)
+        
         if not self.server.listen("ywidgets_daemon"):
             # Remove existing server if it exists
             QLocalServer.removeServer("ywidgets_daemon")
-            self.server.listen("ywidgets_daemon")
+            if not self.server.listen("ywidgets_daemon"):
+                print("Failed to start daemon server")
+                QApplication.quit()
+                return
         
         self.setFocus()
         self.activateWindow()
@@ -389,8 +406,7 @@ class ControlCenter(QWidget):
                     rspan, cspan = get_size_span(saved_size)
                 else:
                     # Default span from plugin class
-                    plugins = load_plugins(self)
-                    for plugin in plugins:
+                    for plugin in self.plugins:
                         if getattr(plugin, "plugin_name", "") == plugin_name:
                             rspan, cspan = getattr(plugin, "grid_span", (2, 2))
                             break
@@ -415,7 +431,7 @@ class ControlCenter(QWidget):
         if plugin_name:
             # Plugin-specific menu
             plugin_title = plugin_name
-            for plugin in load_plugins(self):
+            for plugin in self.plugins:
                 if getattr(plugin, "plugin_name", "") == plugin_name:
                     plugin_title = getattr(plugin, "plugin_title", plugin_name)
                     break
@@ -428,6 +444,7 @@ class ControlCenter(QWidget):
             size_menu.addAction("Default").triggered.connect(lambda: self.change_plugin_size(plugin_name, "Default"))
             size_menu.addAction("Small").triggered.connect(lambda: self.change_plugin_size(plugin_name, "Small"))
             size_menu.addAction("Normal").triggered.connect(lambda: self.change_plugin_size(plugin_name, "Normal"))
+            size_menu.addAction("Medium").triggered.connect(lambda: self.change_plugin_size(plugin_name, "Medium"))
             size_menu.addAction("Large").triggered.connect(lambda: self.change_plugin_size(plugin_name, "Large"))
             size_menu.addAction("Huge").triggered.connect(lambda: self.change_plugin_size(plugin_name, "Huge"))
         else:
@@ -608,8 +625,6 @@ class ControlCenter(QWidget):
             grid.setRowMinimumHeight(row, cell_size)
             grid.setRowStretch(row, 0) 
         
-        plugins = load_plugins(self)
-        
         # Get enabled plugins and positions from config
         enabled_plugins = self.config.get_enabled_plugins_list()
         all_positions = self.config.get_all_plugin_positions()
@@ -622,7 +637,7 @@ class ControlCenter(QWidget):
                 
         self.plugin_widgets = {}
         
-        for plugin in plugins:
+        for plugin in self.plugins:
             plugin_name = getattr(plugin, "plugin_name", "Unknown")
             if plugin_name in positions:
                 row, col = positions[plugin_name]
@@ -641,6 +656,12 @@ class ControlCenter(QWidget):
                 plugin_height = cell_size * rspan + (rspan - 1) * spacing
                 plugin.setFixedSize(plugin_width, plugin_height)
                 
+                # Notify plugin of size change
+                saved_size_str = self.config.get_plugin_size(plugin_name)
+                size_enum = PluginSize(saved_size_str) if saved_size_str != "Default" else PluginSize.NORMAL
+                if hasattr(plugin, 'on_size_changed'):
+                    plugin.on_size_changed(size_enum)
+                
                 # Wrap the plugin with the draggable container
                 draggable_wrapper = DraggablePlugin(plugin, self)
                 # Ensure the wrapper takes the same fixed size
@@ -658,7 +679,7 @@ class ControlCenter(QWidget):
         if size != "Default":
             self.drag_rspan, self.drag_cspan = get_size_span(size)
         else:
-            for plugin in load_plugins(self):
+            for plugin in self.plugins:
                 if getattr(plugin, "plugin_name", "") == plugin_name:
                     self.drag_rspan, self.drag_cspan = getattr(plugin, "grid_span", (1, 1))
                     break

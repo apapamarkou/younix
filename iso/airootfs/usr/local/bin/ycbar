@@ -39,7 +39,7 @@ get_all_modules() {
     # All real modules = top-level keys whose value is an object
     # Exclude structural keys (modules-left/center/right, layer, position, etc.)
     jq -r 'to_entries[] | select(.value | type == "object") | .key' "$CONFIG_FILE" |
-    grep -v -E '^(modules-left|modules-center|modules-right|layer|position|height|spacing|custom/launcher|custom/modes|hyprland/workspaces)$'
+    grep -v -E '^(modules-left|modules-center|modules-right|layer|position|height|spacing|custom/launcher|custom/power|custom/notification|custom/modes|hyprland/workspaces)$'
 }
 
 is_enabled() {

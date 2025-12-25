@@ -12,7 +12,6 @@
   "modules-right": [
     "custom/modes",
     "custom/weather",
-    "custom/drives",
     "custom/nightlight",
     "custom/updates",
     "network",
@@ -21,8 +20,7 @@
     "hyprland/language",
     "tray",
     "custom/clock",
-    "custom/notification",
-    "custom/power"
+    "custom/notification"
   ],
   "custom/launcher": {
     "exec": "echo '󰬠'",
