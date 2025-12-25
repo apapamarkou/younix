@@ -2,11 +2,11 @@ import subprocess
 import threading
 import asyncio
 
-from PyQt6.QtWidgets import QPushButton, QVBoxLayout, QLabel, QSizePolicy
+from PyQt6.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout, QWidget
 from PyQt6.QtCore import Qt, QSize, QTimer
 from PyQt6.QtGui import QIcon
 
-from plugin_manager import BasePlugin
+from plugin_manager import BasePlugin, PluginSize
 
 from dbus_next.aio import MessageBus
 from dbus_next.constants import BusType
@@ -24,40 +24,106 @@ class Plugin(BasePlugin):
         self.network_enabled = False
         self.active_type = None  # wired / wireless / none
 
-        self.btn = QPushButton()
-        self.btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-
-        layout_btn = QVBoxLayout(self.btn)
-        layout_btn.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.icon = QLabel()
-        self.icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout_btn.addWidget(self.icon)
-
-        self.text = QLabel("Network")
-        self.text.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.text.setStyleSheet("color: white; font-size: 14px;")
-        layout_btn.addWidget(self.text)
-
-        self.btn.clicked.connect(self.toggle_network)
-
-        self.btn.setStyleSheet("""
-            QPushButton {
-                background-color: rgba(60,60,60,180);
+        self.main_widget = QWidget()
+        self.main_widget.setStyleSheet("""
+            QWidget {
+                background-color: rgba(60, 60, 60, 180);
                 border-radius: 10px;
-                border: none;
+                color: white;
             }
-            QPushButton:hover {
-                background-color: rgba(80,80,80,200);
+            QWidget:hover {
+                background-color: rgba(80, 80, 80, 200);
             }
         """)
-
+        self.main_widget.mousePressEvent = self.on_click
+        
+        self.content_layout = QVBoxLayout(self.main_widget)
+        self.content_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        self.icon_label = QLabel()
+        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.icon_label.setStyleSheet("background: transparent;")
+        
+        self.text_label = QLabel("Network")
+        self.text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.text_label.setStyleSheet("background: transparent; color: white;")
+        
+        # Wrapper for horizontal layout
+        self.h_widget = QWidget()
+        self.h_widget.setStyleSheet("background: transparent;")
+        self.h_layout = QHBoxLayout(self.h_widget)
+        
         layout = QVBoxLayout(self)
         layout.setContentsMargins(2, 2, 2, 2)
-        layout.addWidget(self.btn)
-
+        layout.addWidget(self.main_widget)
+        
+        self.current_size = PluginSize.NORMAL
+        
         self.update_status()
         self.setup_dbus_monitoring()
+    
+    def on_size_changed(self, size_class: PluginSize):
+        self.current_size = size_class
+        self.update_display()
+    
+    def update_display(self):
+        # Clear existing widgets from layout
+        while self.content_layout.count():
+            item = self.content_layout.takeAt(0)
+            if item.widget():
+                item.widget().setParent(None)
+        
+        # Clear horizontal layout too
+        while self.h_layout.count():
+            item = self.h_layout.takeAt(0)
+            if item.widget():
+                item.widget().setParent(None)
+        
+        icon = self.select_icon()
+        
+        if self.current_size == PluginSize.SMALL:
+            # Only icon
+            pixmap = icon.pixmap(QSize(32, 32))
+            self.icon_label.setPixmap(pixmap)
+            self.content_layout.addWidget(self.icon_label)
+            
+        elif self.current_size == PluginSize.NORMAL:
+            # Icon and text vertically
+            pixmap = icon.pixmap(QSize(44, 44))
+            self.icon_label.setPixmap(pixmap)
+            self.text_label.setStyleSheet("background: transparent; color: white; font-size: 12px;")
+            self.content_layout.addWidget(self.icon_label)
+            self.content_layout.addWidget(self.text_label)
+            
+        elif self.current_size == PluginSize.MEDIUM:
+            # Icon left and text right horizontally
+            pixmap = icon.pixmap(QSize(44, 44))
+            self.icon_label.setPixmap(pixmap)
+            self.text_label.setStyleSheet("background: transparent; color: white; font-size: 12px;")
+            self.h_layout.addWidget(self.icon_label)
+            self.h_layout.addWidget(self.text_label)
+            self.content_layout.addWidget(self.h_widget)
+            
+        elif self.current_size == PluginSize.LARGE:
+            # Icon left and text right bigger horizontally
+            pixmap = icon.pixmap(QSize(64, 64))
+            self.icon_label.setPixmap(pixmap)
+            self.text_label.setStyleSheet("background: transparent; color: white; font-size: 12px;")
+            self.h_layout.addWidget(self.icon_label)
+            self.h_layout.addWidget(self.text_label)
+            self.content_layout.addWidget(self.h_widget)
+            
+        elif self.current_size == PluginSize.HUGE:
+            # Icon and text vertically bigger
+            pixmap = icon.pixmap(QSize(64, 64))
+            self.icon_label.setPixmap(pixmap)
+            self.text_label.setStyleSheet("background: transparent; color: white; font-size: 12px;")
+            self.content_layout.addWidget(self.icon_label)
+            self.content_layout.addWidget(self.text_label)
+    
+    def on_click(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.toggle_network()
 
     # ---------------- NETWORK CONTROL ----------------
 
@@ -81,16 +147,13 @@ class Plugin(BasePlugin):
         self.active_type = self.get_active_connection_type()
 
         if not self.network_enabled:
-            self.text.setText("Enable")
-            print("Disabled")  
+            self.text_label.setText("Enable")
         elif self.active_type is None:
-            self.text.setText("No network")
-            print("No Network")
+            self.text_label.setText("No network")
         else:
-            self.text.setText("Disable")
-            print("Enabled")
+            self.text_label.setText("Disable")
             
-        self.update_icon()
+        self.update_display()
 
     def is_network_enabled(self):
         try:
@@ -118,17 +181,6 @@ class Plugin(BasePlugin):
             return None
         except Exception:
             return None
-
-    # ---------------- ICON ----------------
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        self.update_icon()
-
-    def update_icon(self):
-        size = min(self.width(), self.height()) // 2
-        icon = self.select_icon()
-        self.icon.setPixmap(icon.pixmap(QSize(size, size)))
 
     def select_icon(self):
         if not self.network_enabled:

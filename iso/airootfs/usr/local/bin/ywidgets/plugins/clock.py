@@ -26,6 +26,24 @@ class Plugin(BasePlugin):
         """)
         self.time_label.mousePressEvent = self.on_click
         
+        # Add hover effect
+        self.time_label.enterEvent = lambda e: self.time_label.setStyleSheet("""
+            color: white;
+            background-color: rgba(80, 80, 80, 200);
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: bold;
+        """)
+        self.time_label.leaveEvent = lambda e: self.time_label.setStyleSheet("""
+            color: white;
+            background-color: rgba(60, 60, 60, 180);
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: bold;
+        """)
+        
         layout = QVBoxLayout(self)
         layout.setContentsMargins(2, 2, 2, 2)
         layout.addWidget(self.time_label)

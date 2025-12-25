@@ -21,6 +21,9 @@ class Plugin(BasePlugin):
                 border-radius: 10px;
                 color: white;
             }
+            QWidget:hover {
+                background-color: rgba(80, 80, 80, 200);
+            }
         """)
         
         # Create single layout that stays alive
@@ -40,15 +43,15 @@ class Plugin(BasePlugin):
         self.slider.setStyleSheet("""
             QSlider::groove:horizontal {
                 background: #404040;
-                height: 8px;
-                border-radius: 4px;
+                height: 10px;
+                border-radius: 1px;
             }
             QSlider::handle:horizontal {
                 background: white;
-                width: 16px;
-                height: 16px;
-                border-radius: 8px;
-                margin: -4px 0;
+                width: 15px;
+                height: 15px;
+                border-radius: 4px;
+                margin: -2px 0;
             }
         """)
         
@@ -58,6 +61,7 @@ class Plugin(BasePlugin):
         
         # Wrapper for horizontal layout
         self.h_widget = QWidget()
+        self.h_widget.setStyleSheet("background: transparent;")
         self.h_layout = QHBoxLayout(self.h_widget)
         
         layout = QVBoxLayout(self)
@@ -112,7 +116,7 @@ class Plugin(BasePlugin):
             
         elif self.current_size == PluginSize.MEDIUM:
             # Icon (24x24) and slider vertically
-            pixmap = icon.pixmap(QSize(24, 24))
+            pixmap = icon.pixmap(QSize(44, 44))
             self.icon_label.setPixmap(pixmap)
             self.content_layout.addWidget(self.icon_label)
             self.content_layout.addWidget(self.slider)
@@ -127,7 +131,7 @@ class Plugin(BasePlugin):
             
         elif self.current_size == PluginSize.HUGE:
             # Icon (48x48) on top, slider middle, percentage bottom
-            pixmap = icon.pixmap(QSize(48, 48))
+            pixmap = icon.pixmap(QSize(64, 64))
             self.icon_label.setPixmap(pixmap)
             self.content_layout.addWidget(self.icon_label)
             self.content_layout.addWidget(self.slider)
@@ -139,6 +143,8 @@ class Plugin(BasePlugin):
             self.icon_label.setPixmap(pixmap)
             self.content_layout.addWidget(self.icon_label)
             self.content_layout.addWidget(self.slider)
+                    
+        self.icon_label.setStyleSheet("background: transparent;")
     
     def on_slider_change(self, value):
         self.current_volume = value

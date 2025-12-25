@@ -8,11 +8,11 @@
       "Brightness",
       "Settings",
       "Volume",
-      "Nightlight",
       "Network",
       "Weather",
       "Updates",
-      "Clock"
+      "Clock",
+      "Nightlight"
     ],
     "positions": {
       "Brightness": {
@@ -20,31 +20,31 @@
         "col": 0
       },
       "Settings": {
-        "row": 4,
-        "col": 2
+        "row": 2,
+        "col": 4
       },
       "Updates": {
-        "row": 2,
-        "col": 2
-      },
-      "Volume": {
-        "row": 4,
-        "col": 4
-      },
-      "Nightlight": {
-        "row": 0,
-        "col": 4
-      },
-      "Network": {
-        "row": 2,
-        "col": 4
-      },
-      "Weather": {
         "row": 0,
         "col": 0
       },
-      "Bluetooth": {
+      "Volume": {
+        "row": 0,
+        "col": 3
+      },
+      "Nightlight": {
         "row": 6,
+        "col": 0
+      },
+      "Network": {
+        "row": 6,
+        "col": 4
+      },
+      "Weather": {
+        "row": 4,
+        "col": 3
+      },
+      "Bluetooth": {
+        "row": 0,
         "col": 4
       },
       "Clock": {
@@ -53,14 +53,15 @@
       }
     },
     "sizes": {
-      "Updates": "Default",
+      "Updates": "Medium",
       "Bluetooth": "Normal",
       "Weather": "Large",
-      "Brightness": "Default",
-      "Volume": "Normal",
-      "Settings": "Normal",
-      "Network": "Normal",
-      "Clock": "Default"
+      "Brightness": "Large",
+      "Volume": "Large",
+      "Settings": "Medium",
+      "Network": "Medium",
+      "Clock": "Medium",
+      "Nightlight": "Large"
     }
   }
 }
