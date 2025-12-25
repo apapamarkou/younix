@@ -467,6 +467,15 @@
       "icon_name": "chromium",
       "folderId": null,
       "sortId": 56
+    },
+    "f0fde698-36f4-4b3d-bf2c-cbe54c2c633c": {
+      "id": "f0fde698-36f4-4b3d-bf2c-cbe54c2c633c",
+      "name": "Visual Studio Code",
+      "exec": "code.desktop",
+      "icon": "/usr/share/pixmaps/visual-studio-code.png",
+      "icon_name": "visual-studio-code",
+      "folderId": null,
+      "sortId": 57
     }
   },
   "folders": {}

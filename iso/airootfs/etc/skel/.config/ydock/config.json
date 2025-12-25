@@ -4,8 +4,8 @@
     "chromium.desktop",
     "code.desktop",
     "org.xfce.mousepad.desktop",
-    "thunar.desktop",
-    "xfce4-terminal.desktop"
+    "xfce4-terminal.desktop",
+    "thunar.desktop"
   ],
   "folders": [
     "/home/user/Documents",
