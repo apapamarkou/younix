@@ -149,6 +149,7 @@ ppp
 pptpclient
 pv
 python-cairo
+python-dbus-next
 python-pyqt6
 python-pyqt6-3d
 python-pyqt6-charts
