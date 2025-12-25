@@ -20,13 +20,15 @@ chmod a+x /home/user/.config/autostart/* 2>/dev/null || true
 chmod a+x /home/user/.local/bin/* 2>/dev/null || true
 chmod a+x /home/user/.local/bin/appimage-integrator/* 2>/dev/null || true
 chmod a+x /usr/local/bin/* 2>/dev/null || true
+chmod a+x /usr/local/bin/ywidgets/main.py 2>/dev/null || true
+chmod a+x /usr/local/bin/appimage-integrator/appimage-integrator-cleanup.sh
+chmod a+x /usr/local/bin/appimage-integrator/appimage-integrator-extract.sh
+chmod a+x /usr/local/bin/appimage-integrator/appimage-integrator-observer.sh
 
 sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
 sed -i 's/^#el_GR.UTF-8 UTF-8/el_GR.UTF-8 UTF-8/' /etc/locale.gen
 locale-gen
 echo "LANG=en_US.UTF-8" > /etc/locale.conf
-
-# mkinitcpio -P
 
 # Enable services
 systemctl enable greetd.service
