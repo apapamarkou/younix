@@ -15,4 +15,13 @@
 # YoUNiX Widget launcher
 #
 
-$HOME/.local/bin/ywidgets/main.py
+LOCAL_BINARY=$HOME/.local/bin/ywidgets/main.py
+SYSTEM_BINARY=/usr/local/bin/ywidgets/main.py
+
+if [ -f $LOCAL_BINARY ]; then
+    $LOCAL_BINARY
+elif [ -f $SYSTEM_BINARY ]; then
+    $SYSTEM_BINARY
+else
+    echo "Error: ywidgets not found"
+fi
